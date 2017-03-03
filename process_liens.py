@@ -390,7 +390,7 @@ def form_lien_dict(linetosplit, fieldlist, filetype):
     return lien
 
 
-def convert_blocklot_to_pin(blocklot):
+def convert_blocklot_to_pin(blocklot,dtd):
     # This function has been improved with respect to the
     # original function.
 
@@ -473,19 +473,19 @@ def convert_blocklot_to_pin(blocklot):
                 foundpart2 = True
 
         if not foundpart2:
-            print("ERROR: no alphabetical character ({})".format(blocklot))
+            print("ERROR: no alphabetical character in {} ({})".format(blocklot,dtd))
             return empty_pin
 
         if foundpart2 and len(part1) == 0:
-            print("ERROR: block part 1 not found ({})".format(blocklot))
+            print("ERROR: block part 1 not found in {} ({})".format(blocklot,dtd))
             return empty_pin
 
         if foundpart2 and len(part3) == 0:
-            print("ERROR: lot not found ({})".format(blocklot))
+            print("ERROR: lot not found in {} ({})".format(blocklot,dtd))
             return empty_pin
 
         if foundpart2 and part3.isalpha():
-            print("ERROR: non-numeric lot ({})".format(blocklot))
+            print("ERROR: non-numeric lot in {} ({})".format(blocklot,dtd))
             return empty_pin
 
         # pad parts 1 and 3 with zeros
@@ -539,10 +539,10 @@ def convert_blocklot_to_pin(blocklot):
                         if len(pins) == 1:
 #                            print(blocklot + " => " + pins[0])
                             return pins[0]
-                    print("WARNING: No corresponding PIN found for ({})".format(blocklot))
+                    print("WARNING: No corresponding PIN found for {} ({})".format(blocklot,dtd))
                     return empty_pin
                 else:
-                    print("WARNING: Multiple PINs found for ({})".format(blocklot))
+                    print("WARNING: Multiple PINs found for {} ({}): {}".format(blocklot,dtd,pins))
                     return empty_pin
             else:
                 part4 = part45
@@ -885,7 +885,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
             lien = form_lien_dict(linein.strip(), None, filetype)
 
             # Convert block_lot to PIN.
-            pin = convert_blocklot_to_pin(lien['block_lot'])
+            pin = convert_blocklot_to_pin(lien['block_lot'],lien['DTD'])
             if pin is not None:
                 lien['PIN'] = pin
             lien = retype_fields(lien)
