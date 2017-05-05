@@ -625,6 +625,12 @@ def fuse_parts(active_lien,lien_record):
                         # 2015 satisfactions with the original 2014 records (missed
                         # in the initial upload), the original default seems like 
                         # a fine way of doing this.
+                        if field == 'filing_date': # Fix 'expires' field in the 
+                        # event that we are resetting the filing date.
+                            fused_lien['expires'] = add_years(fused_lien['filing_date'],20)
+                        # This means that all subsequent records will need to be rerun
+                        # to ensure that any lien that had been extended gets 
+                        # re-extended.
         else:
            print("The field {} is in the lien record but not in the active lien.".format(field))
            if field in ['Property Owner', 'Assignee']:
@@ -669,7 +675,7 @@ def process_types(some_record,active_table): # The lien_record is a dict.
     # for local manipulation. Otherwise, if we get a satisfaction record
     # and add the 'expires' and 'satisfied' field in this function (when
     # augment_lien is called), those fields will also show up in the
-    # database when it's # stored as a satisfaction.
+    # database when it's stored as a satisfaction.
     correction_types = ['Amended', 'Amendment', 'Correction', 'Docket Entry Entered in Error', 'Order of Court', 'Suggestion of Death', 'Tax Lien Amendment']
     if not extant:
         lien_record = augment_lien(lien_record) # Add 'expires' and 'satisfied' fields.
