@@ -613,8 +613,18 @@ def fuse_parts(active_lien,lien_record):
                     if active_lien[field] is None or active_lien[field] == '':
                         active_lien[field] = lien_record[field]
                     elif lien_record[field] is not None and lien_record[field] != '':
-                        print("The field {} doesn't match. The active lien has a value of {} while the lien record has a value of {}".format(field,active_lien[field],lien_record[field]))
-                        fused_lien[field] = lien_record[field]
+                        print("(The field {} doesn't match. The active lien has a value of {} while the lien record has a value of {}. By default, the value in the database will be overwritten with the new record's value (regardless of filing date).)".format(field,active_lien[field],lien_record[field]))
+                        fused_lien[field] = lien_record[field] # This previously 
+                        # defaulted to taking the newer one (that is, overwriting 
+                        # generally older information (like the first record in a 
+                        # file) with newer information (like the second and then 
+                        # third record in a file).
+
+                        # The filing_date _could_ be used to help decide about this,
+                        # but since I now want to overwrite liens inferred from 
+                        # 2015 satisfactions with the original 2014 records (missed
+                        # in the initial upload), the original default seems like 
+                        # a fine way of doing this.
         else:
            print("The field {} is in the lien record but not in the active lien.".format(field))
            if field in ['Property Owner', 'Assignee']:
