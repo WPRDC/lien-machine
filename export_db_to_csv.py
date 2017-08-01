@@ -1,3 +1,5 @@
+# cd to the directory with liens.db in it and run this script as follows
+# > python ../lien_code/export_db_to_csv.py liens.db
 import sys
 import csv
 import re
@@ -36,7 +38,9 @@ def main():
 
     print("Wrote raw liens to a CSV file.")
 
-    sorted_active = db.query('SELECT PIN as PIN, block_lot as BLOCK_LOT, filing_date as FILING_DATE, DTD as DTD, description as LIEN_DESCRIPTION, municipality as MUNICIPALITY, ward as WARD, last_docket_entry as LAST_DOCKET_ENTRY, amount as AMOUNT, tax_year as TAX_YEAR, Assignee as ASSIGNEE, property_description as PROPERTY_DESCRIPTION, satisfied as SATISFIED FROM active ORDER BY filing_date ASC, tax_year ASC, DTD ASC, description ASC, Assignee DESC, satisfied DESC;')
+    # "sorted_active" is a misnomer. These are all liens, active
+    # and inactive (i.e., "Liens with current status").
+    sorted_active = db.query('SELECT PIN as PIN, block_lot as BLOCK_LOT, filing_date as FILING_DATE, DTD as DTD, description as LIEN_DESCRIPTION, municipality as MUNICIPALITY, ward as WARD, last_docket_entry as LAST_DOCKET_ENTRY, amount as AMOUNT, tax_year as TAX_YEAR, assignee as ASSIGNEE, property_description as PROPERTY_DESCRIPTION, satisfied as SATISFIED FROM active ORDER BY filing_date ASC, tax_year ASC, DTD ASC, description ASC, assignee DESC, satisfied DESC;')
     dataset.freeze(sorted_active, format='csv', filename='active-' + name + '.csv')
 
     sorted_sats = db.query('SELECT PIN as PIN, block_lot as BLOCK_LOT, filing_date as FILING_DATE, DTD as DTD, description as LIEN_DESCRIPTION, municipality as MUNICIPALITY, ward as WARD, last_docket_entry as LAST_DOCKET_ENTRY, amount as AMOUNT, tax_year as TAX_YEAR, party_type as PARTY_TYPE, last_name as PARTY_NAME, first_name as PARTY_FIRST, middle_name as PARTY_MIDDLE, property_description as PROPERTY_DESCRIPTION FROM raw_satisfactions ORDER BY filing_date ASC, tax_year ASC, DTD ASC, description ASC, party_type DESC;')
@@ -47,6 +51,10 @@ def main():
     # tax year the first thing to sort on.
     dataset.freeze(sorted_sats, format='csv', filename='raw-sats-' + name + '.csv')
 
+    summary_table = db.query("SELECT PIN as pin, COUNT(*) as number, SUM(AMOUNT) as total_amount FROM active WHERE PIN <> '' AND NOT(SATISFIED) GROUP BY PIN;")
+    dataset.freeze(summary_table, format='csv', filename='summary-' + name + '.csv')
+    # At last count, there were between 9 and 10 thousand liens with no identified PIN 
+    # (on the order of 1% of all liens), totalling about 2 million dollars.
 
 if __name__ == "__main__":
     main()
