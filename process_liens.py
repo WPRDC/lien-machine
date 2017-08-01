@@ -27,6 +27,18 @@ write_to_ckan = False
 # This code can be run like this:
 # db-test drw$ python ../../taxliens.py pitt_lien_summaries.txt satisfactions.txt liens.db
 
+#delete_matches = True # This option was briefly considered to
+# deal with a situation where some records had not been entered
+# on the first pass (but the existence of those liens was 
+# inferred from their satsifactions, and while the filing dates
+# could be fixed by processing those skipped records and fusing
+# them with the inferred records, the chance to fix the 'expires'
+# field on a few of them was missed when the filing date was 
+# fixed and the 'expires' date was forgotten). (I suppose that
+# we could also add the 'expires' field to the lien record before
+# the fusing stage, but that might cascade and cause other problems
+# with storing the record in the raw table.)
+
 def access_db(db_filename):
     #db = dataset.connect('sqlite:///liens.db')
     db = dataset.connect('sqlite:///'+db_filename)
@@ -693,7 +705,8 @@ def process_types(some_record,active_table): # The lien_record is a dict.
             #to the lien already in the active-lien table (kind of like an assignment).
 
 #            print(">>>>>>> Found a match for this lien I wanted to insert in the active database: {}".format(dict_of_keys(lien_record)))
-
+            #if delete_matches:
+                
             lien_to_store = fuse_parts(match,lien_record) # Pipe-delimit lists
 
     elif lien_record['last_docket_entry'] in correction_types:   # If this is a correction,
