@@ -183,6 +183,8 @@ def unsatisfied_db(lien,sats_table):
         return False
 
 def form_lien_dict(linetosplit, fieldlist, filetype):
+    # [ ] Consider replacing this with a function based on the FixedWidth module.
+
     # [The fieldlist argument is supporting some legacy functionality
     # that has been phased out.]
 
@@ -1018,7 +1020,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
 
     if raw_batch_insert_mode:
         raw_table.insert_many(raw_liens_to_add)
-    print("record_type_count (after filtering out bogus types)= "+str(record_type_count))
+    print("record_type_count (after filtering out bogus types) = "+str(record_type_count))
     filein.close()
 
 
