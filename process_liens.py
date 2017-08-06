@@ -863,10 +863,10 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
 
     # Re-examine whether these types are really bogus.
     # [ ] Go into the Court Records web site and look some of these up.
-    bogus_record_types = ['Affidavit of Service', 'Amended Municipal Claim', 'Certificate of Service', 'Copy', 'Correction to Judgment Index', 'Mail Returned', 'Motion & Order', 'Notice', 'Suggestion of Bankruptcy', 'Tax Lien Strike-off', 'LAST_DOCKET_ENTRY']
+    #bogus_record_types = ['Affidavit of Service', 'Amended Municipal Claim', 'Certificate of Service', 'Copy', 'Correction to Judgment Index', 'Mail Returned', 'Motion & Order', 'Notice', 'Suggestion of Bankruptcy', 'Tax Lien Strike-off', 'LAST_DOCKET_ENTRY']
     #   Ones that are (at least in some cases) NOT bogus:
     # Affidavit of Service # This matches exactly one lien which (coincidentally)
-    #   was satisfied in Septembr of 2016... we just don't have that file yet.
+    #   was satisfied in September of 2016... we just don't have that file yet.
     # Amended Municipal Claim
     # Certificate of Service
     # Copy # Goes with a docket where the docket text says "of Bankruptcy Order".
