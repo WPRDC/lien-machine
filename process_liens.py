@@ -69,7 +69,7 @@ def access_db(db_filename):
 #   [ ] Consider abstracting input and output, if possible.
 #           Aside from the two table-printing loops at the end of the main function,
 #           there's only four lines that directly interface with the database,
-#           and they could be consolidated/abstratced into the matching_lien
+#           and they could be consolidated/abstracted into the matching_lien
 #           function and the store_record_in_db function, so adding a CKAN mode
 #           seems plausible.
 
@@ -765,7 +765,10 @@ def store_lien_in_dbs(lien_record,raw_table,active_table):
     lien_record = store_record_in_db(lien_record,raw_table,raw_keys)
 
     # ALSO MAYBE INSERT IT INTO THE MASTER DATABASE
-    lien_to_store = repackage_parties(lien_record)
+    lien_to_store = repackage_parties(lien_record) # Eliminates 'party_type', 
+    # 'first_name', 'middle_name', 'last_name' and replaces all that 
+    # information with a field of either 'Property Owner' or 'Assignee' and 
+    # the corresponding name as the value.
     active_lien, extant = process_types(lien_to_store,active_table)
 
     found_match = matching_lien(active_lien,active_table)
@@ -802,6 +805,9 @@ def delete_ckan_row(server,resource_id):
 
 
 def process_satisfaction(sat,sats_table,active_table):
+    if 'Assignee' in sat or 'Property Owner' in sat:
+        pprint.pprint(sat)
+        raise ValueError("This satisfaction has an Assignee or Property Owner field")
     store_record_in_db(sat,sats_table)
     match = matching_lien(sat,active_table)
     if match is not None:
@@ -923,6 +929,11 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
             # Eliminate one bogus combination of DTD and block_lot,
             # as this was verified by Court Records to be an anomalous
             # additional block_lot associated with this docket.
+    
+            unmutated_lien = dict(lien) # Keep a copy around to allow a raw 
+            # satisfaction record to be stored (since the variable "lien"
+            # can be mutated by functions below (like repackage_parties).
+    
             save = not((lien['block_lot'] == '1180R62') and
                         (lien['DTD'] == 'DTD-03-037477'))
 
@@ -934,7 +945,8 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                 # False when process_records is called for satisfactions, so this
                     self_satisfied = False # code is never
                 else:                      # even called.
-                    self_satisfied = is_self_satisfied(lien,filetype,raw_table)
+                    self_satisfied = is_self_satisfied(dict(lien),filetype,raw_table)
+                    # Use dict(lien) as the argument to avoid mutating the lien.
                 # Another option here would be to try
                 # self_satisfied = is_self_satisfied(lien,filetype,raw_table)
                 # but I'm not sure that would work.
@@ -948,7 +960,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                 # Thus, we'll try checking against the raw-liens
                 # table.
             else:
-                self_satisfied = is_self_satisfied(lien,filetype,active_table)
+                self_satisfied = is_self_satisfied(dict(lien),filetype,active_table)
             # For those oddball lien records that both establish
             # their own existence and satisfaction, put the record
             # in the raw, raw_satisfactions, and inactive tables.
@@ -973,7 +985,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                     if raw_batch_insert_mode:
                         raw_liens_to_add.append(lien)
                     else:
-                        store_lien_in_dbs(lien, raw_table, active_table)
+                        store_lien_in_dbs(lien, raw_table, active_table) # << This can mutate lien.
                     # Currently store_lien_in_dbs has all the logic
                     # for handling the processing of different
                     # docket entries for liens (under "process_types").
@@ -991,9 +1003,11 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
 
 
                 if filetype == TYPE_ONEMONTHSAT:
-                    if dict_of_keys(lien) not in satisfied:
-                        process_satisfaction(lien, sats_table, active_table)
-                        satisfied.append(dict_of_keys(lien))
+#                    if dict_of_keys(lien) not in satisfied:
+#                        process_satisfaction(lien, sats_table, active_table)
+                    if dict_of_keys(unmutated_lien) not in satisfied:
+                        process_satisfaction(dict(unmutated_lien), sats_table, active_table)
+                        satisfied.append(dict_of_keys(dict(unmutated_lien)))
                 elif self_satisfied and filetype == TYPE_SIXMONTHLIEN:
                 # Note that if a lien from the six-month summary
                 # files is self-satisfying, the filing_date field
@@ -1001,11 +1015,11 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                 # exact filing date of the satisfaction can not be
                 # determined (unlike for liens that come from the
                 # satisfaction files).
-                    clone_for_satisfaction = dict(lien)
+                    clone_for_satisfaction = dict(unmutated_lien)
                     clone_for_satisfaction['filing_date'] = None
-                    if dict_of_keys(lien) not in satisfied:
+                    if dict_of_keys(clone_for_satisfaction) not in satisfied: 
                         process_satisfaction(clone_for_satisfaction, sats_table, active_table)
-                        satisfied.append(dict_of_keys(lien))
+                        satisfied.append(dict_of_keys(clone_for_satisfaction)) 
             count += 1
 
 # In cases like 'Satisfied as to Borough ONLY', we could
