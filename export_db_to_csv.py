@@ -51,7 +51,7 @@ def main():
     # tax year the first thing to sort on.
     dataset.freeze(sorted_sats, format='csv', filename='raw-sats-' + name + '.csv')
 
-    summary_table = db.query("SELECT PIN as pin, COUNT(*) as number, SUM(AMOUNT) as total_amount FROM active WHERE PIN <> '' AND NOT(SATISFIED) GROUP BY PIN;")
+    summary_table = db.query("SELECT PIN as pin, COUNT(*) as number, ROUND(SUM(AMOUNT),2) as total_amount FROM active WHERE PIN <> '' AND NOT(SATISFIED) GROUP BY PIN;")
     dataset.freeze(summary_table, format='csv', filename='summary-' + name + '.csv')
     # At last count, there were between 9 and 10 thousand liens with no identified PIN 
     # (on the order of 1% of all liens), totalling about 2 million dollars.
