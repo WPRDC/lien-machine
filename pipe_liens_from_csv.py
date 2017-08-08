@@ -6,7 +6,7 @@ import pprint
 import time
 #import yesterday
 
-from parameters/local_parameters import SETTINGS_FILE
+from parameters.local_parameters import SETTINGS_FILE
 
 class RawLiensSchema(pl.BaseSchema):
     pin = fields.String(dump_to="pin", allow_none=True)
