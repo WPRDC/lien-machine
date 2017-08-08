@@ -6,8 +6,7 @@ import pprint
 import time
 #import yesterday
 
-#SETTINGS_FILE = '/Users/daw165/data/TaxLiens/etl/settings-liens.json'
-from local_parameters import SETTINGS_FILE
+from parameters/local_parameters import SETTINGS_FILE
 
 class RawLiensSchema(pl.BaseSchema):
     pin = fields.String(dump_to="pin", allow_none=True)
