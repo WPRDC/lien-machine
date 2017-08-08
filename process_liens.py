@@ -1,7 +1,7 @@
 import os.path
 import sys
 import re
-from the_pin import valid_pins
+from util.the_pin import valid_pins
 from collections import defaultdict
 from datetime import datetime, date
 import dataset
