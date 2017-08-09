@@ -11,12 +11,12 @@ import time
 from parameters.local_parameters import SETTINGS_FILE
 
 class RawLiensSchema(pl.BaseSchema):
-    pin = fields.String(dump_to="pin", allow_none=True)
+    pin = fields.String(dump_to="pin", allow_none=False)
     block_lot = fields.String(dump_to="block_lot", allow_none=True)
     filing_date = fields.Date(dump_to="filing_date", allow_none=True)
     tax_year = fields.Integer(dump_to="tax_year", allow_none=True)
     dtd = fields.String(dump_to="dtd", allow_none=False)
-    lien_description = fields.String(dump_to="lien_description", allow_none=True)
+    lien_description = fields.String(dump_to="lien_description", allow_none=False)
     municipality = fields.String(dump_to="municipality", allow_none=True)
     ward = fields.String(dump_to="ward", allow_none=True)
     last_docket_entry = fields.String(dump_to="last_docket_entry", allow_none=True)
@@ -65,22 +65,28 @@ class RawLiensSchema(pl.BaseSchema):
             # to by their schema names, not the name that they
             # are ultimately dumped to.
             #data['party_middle'] = ''
-        data['assignee'] = str(data['party_name'])
+            data['assignee'] = '' # A key field can not have value
+            # None or upserts will work as blind inserts.
+        else:
+            data['assignee'] = str(data['party_name'])
         del data['party_type']
         del data['party_name']
-    # The stuff below was originally written as a  separate function 
+    # The stuff below was originally written as a separate function 
     # called avoid_null_keys, but based on the above warning, it seems 
     # better to merge it with omit_owners.
         if data['assignee'] is None:
-    #        data['assignee'] = ' '
+    #        data['assignee'] = ''
+           pprint.pprint(data)
+           raise ValueError("Found a null value for 'assignee'")
+        if data['pin'] is None:
+            data['pin'] = ''
             pprint.pprint(data)
-            raise ValueError("Found a null value for 'assignee'")
         if data['dtd'] is None:
-    #        data['dtd'] = ' '
+    #        data['dtd'] = ''
             pprint.pprint(data)
             raise ValueError("Found a null value for 'dtd'")
         if data['lien_description'] is None:
-    #        data['lien_description'] = ' '
+    #        data['lien_description'] = ''
             pprint.pprint(data)
             raise ValueError("Found a null value for 'lien_description'")
         if data['tax_year'] is None:
@@ -125,10 +131,14 @@ class RawLiensSchema(pl.BaseSchema):
 #the referenced settings.json file when the corresponding
 #flag below is True.
 def main():
-    resource_name = 'Raw tax-lien records to present (beta)'
+    specify_resource_by_name = True
+    if specify_resource_by_name:
+        kwargs = {'resource_name': 'Null - Raw tax-lien records to present (beta)'}
+    #else:
+        #kwargs = {'resource_id': ''}
     #resource_id = '8cd32648-757c-4637-9076-85e144997ca8' # Raw liens
     #target = '/Users/daw165/data/TaxLiens/July31_2013/raw-liens.csv' # This path is hard-coded.
-    target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/raw-liens-test.csv' # This path is also hard-coded.
+    target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/a-little-too-null.csv' # This path is also hard-coded.
     log = open('uploaded.log', 'w+')
 
     #test = yesterday.run()
@@ -143,7 +153,7 @@ def main():
     site = settings['loader'][server]['ckan_root_url']
     package_id = settings['loader'][server]['package_id']
 
-    print("Preparing to pipe data from {} to package ID {} on {}".format(target,package_id,site))
+    print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,list(kwargs.values())[0],package_id,site))
     time.sleep(1.0)
 
     lien_and_mean_pipeline = pl.Pipeline('lien_and_mean_pipeline',
@@ -159,15 +169,21 @@ def main():
         .load(pl.CKANDatastoreLoader, 'production',
               fields=fields_to_publish,
               #package_id=package_id,
-              resource_id=resource_id,
+              #resource_id=resource_id,
               #resource_name=resource_name,
               key_fields=['dtd','lien_description','tax_year','pin','assignee'],
               # A potential problem with making the pin field a key (is that one property
               # could have two different PINs (due to the alternate PIN) though I
               # have gone to some lengths to avoid this.)
-              method='upsert').run()
+              method='upsert',
+              **kwargs).run()
     #          key_fields=['DTD','LIEN_DESCRIPTION','TAX_YEAR','PARTY_TYPE','PARTY_NAME','PARTY_FIRST','PARTY_MIDDLE'],
-    log.write("Finished upserting {}\n".format(resource_id))
+    if specify_resource_by_name:
+        print("Piped data to {}".format(kwargs['resource_name']))
+        log.write("Finished upserting {}\n".format(kwargs['resource_name']))
+    else:
+        print("Piped data to {}".format(kwargs['resource_id']))
+        log.write("Finished upserting {}\n".format(kwargs['resource_id']))
     log.close()
 
 fields0 = RawLiensSchema().serialize_to_ckan_fields()
