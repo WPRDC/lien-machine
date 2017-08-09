@@ -14,7 +14,7 @@ class RawLiensSchema(pl.BaseSchema):
     pin = fields.String(dump_to="pin", allow_none=False)
     block_lot = fields.String(dump_to="block_lot", allow_none=True)
     filing_date = fields.Date(dump_to="filing_date", allow_none=True)
-    tax_year = fields.Integer(dump_to="tax_year", allow_none=True)
+    tax_year = fields.Integer(dump_to="tax_year", allow_none=False)
     dtd = fields.String(dump_to="dtd", allow_none=False)
     lien_description = fields.String(dump_to="lien_description", allow_none=False)
     municipality = fields.String(dump_to="municipality", allow_none=True)
@@ -25,11 +25,10 @@ class RawLiensSchema(pl.BaseSchema):
     party_name = fields.String(dump_to="party_name", allow_none=True)
     assignee = fields.String(allow_none=False)
     # Isn't it the case that 'assignee' was chosen as a field for the raw lien records because 
-    # it is the only field that can be used to differentiate some records? In that case, maybe 
-    # empty or '' assignee values should be replaced by '-' or ' ' or something. (This is based
-    # on the previous finding/suspicion that both None value and empty strings resulted in keys
-    # that would not work properly in certain cases.) And what about the case of integer fields
-    # or other types?
+    # it is the only field that can be used to differentiate some records? 
+
+    # Never let any of the key fields have None values. It's just asking for 
+    # multiplicity problems on upsert.
 
     # [Note that since this script is taking data from CSV files, there should be no 
     # columns with None values. It should all be instances like [value], [value],, [value],...
@@ -74,26 +73,24 @@ class RawLiensSchema(pl.BaseSchema):
     # The stuff below was originally written as a separate function 
     # called avoid_null_keys, but based on the above warning, it seems 
     # better to merge it with omit_owners.
-        if data['assignee'] is None:
-    #        data['assignee'] = ''
+        if data['assignee'] is None: 
+            #data['assignee'] = '' # This should never happen based
+            # on the above logic. This is just a double check to 
+            # ensure the key fields are OK.
            pprint.pprint(data)
            raise ValueError("Found a null value for 'assignee'")
         if data['pin'] is None:
             data['pin'] = ''
             pprint.pprint(data)
         if data['dtd'] is None:
-    #        data['dtd'] = ''
             pprint.pprint(data)
             raise ValueError("Found a null value for 'dtd'")
         if data['lien_description'] is None:
-    #        data['lien_description'] = ''
             pprint.pprint(data)
             raise ValueError("Found a null value for 'lien_description'")
         if data['tax_year'] is None:
-    #        data['tax_year'] = 0
             pprint.pprint(data)
             raise ValueError("Found a null value for 'tax_year'")
-
 
 
     @pre_load
@@ -119,12 +116,6 @@ class RawLiensSchema(pl.BaseSchema):
 # Resource Metadata
 #package_id = '626e59d2-3c0e-4575-a702-46a71e8b0f25'     # Production
 #package_id = '85910fd1-fc08-4a2d-9357-e0692f007152'     # Stage
-#package_id = '22fe57da-f5b8-4c52-90ea-b10591a66f90' # This is
-# the package created by the county previously to house liens
-# data.
-
-#package_id = '626e59d2-3c0e-4575-a702-46a71e8b0f25'
-#package_id = '22fe57da-f5b8-4c52-90ea-b10591a66f90'
 ###############
 # FOR SOME PART OF THE BELOW PIPELINE, I THINK...
 #The package ID is obtained not from this file but from
@@ -138,7 +129,7 @@ def main():
         #kwargs = {'resource_id': ''}
     #resource_id = '8cd32648-757c-4637-9076-85e144997ca8' # Raw liens
     #target = '/Users/daw165/data/TaxLiens/July31_2013/raw-liens.csv' # This path is hard-coded.
-    target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/a-little-too-null.csv' # This path is also hard-coded.
+    target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/raw-seminull-test.csv'
     log = open('uploaded.log', 'w+')
 
     #test = yesterday.run()
