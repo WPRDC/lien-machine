@@ -10,7 +10,8 @@ import time
 
 from parameters.local_parameters import SETTINGS_FILE
 
-class RawLiensSchema(pl.BaseSchema):
+class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records 
+    # (rather than synthesized liens).
     pin = fields.String(dump_to="pin", allow_none=False)
     block_lot = fields.String(dump_to="block_lot", allow_none=True)
     filing_date = fields.Date(dump_to="filing_date", allow_none=True)
@@ -163,12 +164,11 @@ def main():
               #resource_id=resource_id,
               #resource_name=resource_name,
               key_fields=['dtd','lien_description','tax_year','pin','assignee'],
-              # A potential problem with making the pin field a key (is that one property
+              # A potential problem with making the pin field a key is that one property
               # could have two different PINs (due to the alternate PIN) though I
-              # have gone to some lengths to avoid this.)
+              # have gone to some lengths to avoid this.
               method='upsert',
               **kwargs).run()
-    #          key_fields=['DTD','LIEN_DESCRIPTION','TAX_YEAR','PARTY_TYPE','PARTY_NAME','PARTY_FIRST','PARTY_MIDDLE'],
     if specify_resource_by_name:
         print("Piped data to {}".format(kwargs['resource_name']))
         log.write("Finished upserting {}\n".format(kwargs['resource_name']))
