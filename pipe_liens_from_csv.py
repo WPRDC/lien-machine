@@ -1,5 +1,7 @@
-import datetime
+import sys, json, datetime
 from marshmallow import fields, pre_load, post_load
+
+sys.path.insert(0, '/Users/drw/WPRDC/etl-dev/wprdc-etl') # A path that we need to import code from
 import pipeline as pl
 from subprocess import call
 import pprint
@@ -13,7 +15,7 @@ class RawLiensSchema(pl.BaseSchema):
     block_lot = fields.String(dump_to="block_lot", allow_none=True)
     filing_date = fields.Date(dump_to="filing_date", allow_none=True)
     tax_year = fields.Integer(dump_to="tax_year", allow_none=True)
-    dtd = fields.String(dump_to="dtd", allow_none=True)
+    dtd = fields.String(dump_to="dtd", allow_none=False)
     lien_description = fields.String(dump_to="lien_description", allow_none=True)
     municipality = fields.String(dump_to="municipality", allow_none=True)
     ward = fields.String(dump_to="ward", allow_none=True)
@@ -135,7 +137,8 @@ def main():
 
     server = "production"
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
-    with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
+    #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
+    with open(SETTINGS_FILE) as f: 
         settings = json.load(f)
     site = settings['loader'][server]['ckan_root_url']
     package_id = settings['loader'][server]['package_id']
