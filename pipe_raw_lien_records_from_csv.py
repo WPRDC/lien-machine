@@ -13,7 +13,7 @@ from parameters.local_parameters import SETTINGS_FILE
 class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records 
     # (rather than synthesized liens).
     pin = fields.String(dump_to="pin", allow_none=False)
-    block_lot = fields.String(dump_to="block_lot", allow_none=True)
+    block_lot = fields.String(dump_to="block_lot", allow_none=False)
     filing_date = fields.Date(dump_to="filing_date", allow_none=True)
     tax_year = fields.Integer(dump_to="tax_year", allow_none=False)
     dtd = fields.String(dump_to="dtd", allow_none=False)
@@ -80,8 +80,13 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
             # ensure the key fields are OK.
            pprint.pprint(data)
            raise ValueError("Found a null value for 'assignee'")
+        if data['block_lot'] is None:
+            data['block_lot'] = ''
+            print("Missing block-lot identifier")
+            pprint.pprint(data)
         if data['pin'] is None:
             data['pin'] = ''
+            print("Missing PIN")
             pprint.pprint(data)
         if data['dtd'] is None:
             pprint.pprint(data)
@@ -163,7 +168,7 @@ def main():
               #package_id=package_id,
               #resource_id=resource_id,
               #resource_name=resource_name,
-              key_fields=['dtd','lien_description','tax_year','pin','assignee'],
+              key_fields=['dtd','lien_description','tax_year','pin','block_lot','assignee'],
               # A potential problem with making the pin field a key is that one property
               # could have two different PINs (due to the alternate PIN) though I
               # have gone to some lengths to avoid this.
