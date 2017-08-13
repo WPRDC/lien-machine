@@ -2,28 +2,15 @@ import os
 import sys
 import re, csv
 from util.the_pin import valid_pins
-from collections import defaultdict
 from datetime import datetime, date
 import pprint
-from json import loads, dumps
-import timeit
 from process_liens import convert_blocklot_to_pin
 
 from copy import deepcopy
 from fixedwidth.fixedwidth import FixedWidth
 
-write_to_ckan = False
-
 # This code can be run like this:
-# db-test drw$ python ../../taxliens.py pitt_lien_summaries.txt satisfactions.txt liens.db
-
-# [ ] Implement pushing this stuff to CKAN.
-#   [ ] Consider abstracting input and output, if possible.
-#           Aside from the two table-printing loops at the end of the main function,
-#           there's only four lines that directly interface with the database,
-#           and they could be consolidated/abstratced into the matching_lien
-#           function and the store_record_in_db function, so adding a CKAN mode
-#           seems plausible.
+# $ python process_foreclosures.py /path/to/foreclosures-data.txt
 
 def write_to_csv(filename,list_of_dicts,keys): # Taken from utility_belt
     with open(filename, 'wb') as output_file:
@@ -31,29 +18,14 @@ def write_to_csv(filename,list_of_dicts,keys): # Taken from utility_belt
         dict_writer.writeheader()
         dict_writer.writerows(list_of_dicts)
 
-def retype_fields(lien):
-    # Coerce lien types.
-    augmented_lien = lien
-    # Convert dates from crazy string format:
-    #   29-OCT-13
-    # to a datetime.
-    augmented_lien['filing_date'] = datetime.strptime(lien['filing_date'],"%d-%b-%y")
-    # The filing date is the filing date of the lien
-    # for the liens files but the filing date of the
-    # satisfaction for the satisfaction files!
-    augmented_lien['amount'] = float(lien['amount'])
-    augmented_lien['tax_year'] = int(lien['tax_year'])
-    return augmented_lien
-
-
 def validate_input_files(filein1):
     errorstring = ""
 
     if filein1 == "":
-        errorstring = errorstring + "Script requires three filenames to be passed as parameters.\n"
+        errorstring = errorstring + "This script requires a filename to be passed as a parameter.\n"
 
     if filein1[0:15] != "cv_m_pitt_" or filein1[len(filein1)-4:len(filein1)] not in [".txt", ".lst"]:
-        errorstring = errorstring + "The first input file must be a tax lien text file (of the form cv_m_pitt_lien_MTHYEAR.txt)\n"
+        errorstring = errorstring + "The first input file must be a foreclosures data file (of the form cv_m_pitt_[something].txt)\n"
 
     monthyear = filein1[len(filein1)-11:len(filein1)-4]
 
