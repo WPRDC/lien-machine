@@ -1103,7 +1103,7 @@ def main():
     errorstring = ""
 
     if errorstring != "":
-        print errorstring
+        print(errorstring)
     else:
         new_liens_file = filein1
         filetype = detect_format(new_liens_file)
