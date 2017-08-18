@@ -13,10 +13,17 @@ from fixedwidth.fixedwidth import FixedWidth
 # $ python process_foreclosures.py /path/to/foreclosures-data.txt
 
 def write_to_csv(filename,list_of_dicts,keys): # Taken from utility_belt
-    with open(filename, 'wb') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys, extrasaction='ignore', lineterminator='\n')
-        dict_writer.writeheader()
-        dict_writer.writerows(list_of_dicts)
+
+    try:
+        with open(filename, "w", encoding="utf-8") as output_file:
+            dict_writer = csv.DictWriter(output_file, keys, extrasaction='ignore', lineterminator='\n')
+            dict_writer.writeheader()
+            dict_writer.writerows(list_of_dicts)
+    except: # Python 2 file opening
+        with open(filename,'wb') as output_file:
+            dict_writer = csv.DictWriter(output_file, keys, extrasaction='ignore', lineterminator='\n')
+            dict_writer.writeheader()
+            dict_writer.writerows(list_of_dicts)
 
 def validate_input_files(filein1):
     errorstring = ""
@@ -157,11 +164,17 @@ def parse_file(filein):
                 print("Somehow a non-Plaintiff row slipped into this file!")
     return list_of_dicts
 
-def main():
-    try:
-        filein1 = sys.argv[1] # The file with the new foreclosures.
-    except:
-        filein1 = ""
+def main(*args, **kwargs):
+    print("kwargs = {}".format(kwargs))
+    
+    if 'input' in kwargs:
+        filein1 = kwargs['input']
+    else:
+        try:
+            print("sys.argv = {}".format(sys.argv))
+            filein1 = sys.argv[1] # The file with the new foreclosures.
+        except:
+            filein1 = ""
 
     filename1 = filein1.split("/")[-1]
 
@@ -191,8 +204,12 @@ def main():
         write_to_csv(output_file,list_of_dicts,fields_to_write)
 
         print("\nFiles processed successfully.")
-        with open(dpath+'processed.log', 'ab') as processed:
-            processed.write('Processed {}\n'.format(filein1))
+        try:
+            with open(dpath+'processed.log', 'a', encoding="utf-8") as processed:
+                processed.write('Processed {}\n'.format(filein1))
+        except: # Python 2 backup approach
+            with open(dpath+'processed.log', 'ab') as processed:
+                processed.write('Processed {}\n'.format(filein1))
         return output_file
 
 if __name__ == "__main__":
