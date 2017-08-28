@@ -30,9 +30,6 @@ def main():
         filename = db_file
     name = re.sub("\..*","",filename) #name = re.sub("\..*","",db_file)
 
-#    raw_table, active_table, sats_table = access_db(db_file)
-#   'raw_liens', 'active', 'raw_satisfactions'
-
     # export all users into a single JSON
     #result = db['raw_liens'].all()
     #dataset.freeze(result, format='json', filename='users.json')
@@ -50,8 +47,8 @@ def main():
 
     # "sorted_active" is a misnomer. These are all liens, active
     # and inactive (i.e., "Liens with current status").
-    sorted_active = db.query('SELECT PIN as PIN, block_lot as BLOCK_LOT, filing_date as FILING_DATE, DTD as DTD, description as LIEN_DESCRIPTION, municipality as MUNICIPALITY, ward as WARD, last_docket_entry as LAST_DOCKET_ENTRY, amount as AMOUNT, tax_year as TAX_YEAR, assignee as ASSIGNEE, property_description as PROPERTY_DESCRIPTION, satisfied as SATISFIED FROM active ORDER BY filing_date ASC, tax_year ASC, DTD ASC, description ASC, assignee DESC, satisfied DESC;')
-    dataset.freeze(sorted_active, format='csv', filename= path + 'active-' + name + '.csv')
+    sorted_liens = db.query('SELECT PIN as PIN, block_lot as BLOCK_LOT, filing_date as FILING_DATE, DTD as DTD, description as LIEN_DESCRIPTION, municipality as MUNICIPALITY, ward as WARD, last_docket_entry as LAST_DOCKET_ENTRY, amount as AMOUNT, tax_year as TAX_YEAR, assignee as ASSIGNEE, property_description as PROPERTY_DESCRIPTION, satisfied as SATISFIED FROM active ORDER BY filing_date ASC, tax_year ASC, DTD ASC, description ASC, assignee DESC, satisfied DESC;')
+    dataset.freeze(sorted_liens, format='csv', filename= path + 'synthesized-' + name + '.csv')
 
     sorted_sats = db.query('SELECT PIN as PIN, block_lot as BLOCK_LOT, filing_date as FILING_DATE, DTD as DTD, description as LIEN_DESCRIPTION, municipality as MUNICIPALITY, ward as WARD, last_docket_entry as LAST_DOCKET_ENTRY, amount as AMOUNT, tax_year as TAX_YEAR, party_type as PARTY_TYPE, last_name as PARTY_NAME, first_name as PARTY_FIRST, middle_name as PARTY_MIDDLE, property_description as PROPERTY_DESCRIPTION FROM raw_satisfactions ORDER BY filing_date ASC, tax_year ASC, DTD ASC, description ASC, party_type DESC;')
     # When a lien comes from a six-month summary file and

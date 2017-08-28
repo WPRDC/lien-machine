@@ -43,9 +43,9 @@ def access_db(db_filename):
     #db = dataset.connect('sqlite:///liens.db')
     db = dataset.connect('sqlite:///'+db_filename)
     raw_table = db['raw_liens']
-    active_table = db['active']
+    liens_table = db['liens']
     sats_table = db['raw_satisfactions']
-    return raw_table, active_table, sats_table
+    return raw_table, liens_table, sats_table
 
 # Next steps:
 # [ ] Test processing of summary files.
@@ -652,7 +652,7 @@ def fuse_parts(active_lien,lien_record):
                print("... so let's add it.")
     return fused_lien
 
-def process_types(some_record,active_table): # The lien_record is a dict.
+def process_types(some_record,liens_table): # The lien_record is a dict.
     # Handle special processing that particular lien records may demand.
 
     # This function takes a lien record/filing and returns a lien (which may
@@ -678,7 +678,7 @@ def process_types(some_record,active_table): # The lien_record is a dict.
     # Exoneration of Tax Lien
     # Lien Entered in Error by Filer
 
-    match = matching_lien(some_record,active_table)
+    match = matching_lien(some_record,liens_table)
     extant = match is not None
     new_types = ['Tax Lien', 'Pittsburgh Tax Lien (2 years)'
         'Pittsburgh Tax Lien (3 years)', 'Pittsburgh Tax Lien (4 years)',
@@ -718,7 +718,7 @@ def process_types(some_record,active_table): # The lien_record is a dict.
             # Run through the fields in the correction record and just copy all
             # those onto the active lien (except for the type, party information
             # (which may go in a separate table), and the filing_date (which should
-            # maybe show up as a last_modified date in the active_table)).
+            # maybe show up as a last_modified date in the liens_table)).
             for field in lien_record.keys():
                 if field in ['party_type','last_name','first_name','middle_name']:
                     # Update the parties, somehow...
@@ -750,7 +750,7 @@ def store_record_in_db(record,table,keys=active_key_list()):
     table.upsert(record, keys)
     return record
 
-def store_lien_in_dbs(lien_record,raw_table,active_table):
+def store_lien_in_dbs(lien_record,raw_table,liens_table):
     # The lien_record is a dict at this point.
 
     # 1) Store the lien information (which really may be part of a lien,
@@ -769,13 +769,13 @@ def store_lien_in_dbs(lien_record,raw_table,active_table):
     # 'first_name', 'middle_name', 'last_name' and replaces all that 
     # information with a field of either 'Property Owner' or 'Assignee' and 
     # the corresponding name as the value.
-    active_lien, extant = process_types(lien_to_store,active_table)
+    active_lien, extant = process_types(lien_to_store,liens_table)
 
-    found_match = matching_lien(active_lien,active_table)
+    found_match = matching_lien(active_lien,liens_table)
     if extant:
-        active_table.update(active_lien, active_key_list()) # Could be changed to store_record_in_db
+        liens_table.update(active_lien, active_key_list()) # Could be changed to store_record_in_db
     elif found_match is None:
-        active_table.insert(active_lien) # Could be changed to store_record_in_db
+        liens_table.insert(active_lien) # Could be changed to store_record_in_db
 
 def delete_ckan_row(server,resource_id):
     #http://docs.ckan.org/en/latest/maintaining/datastore.html#ckanext.datastore.logic.action.datastore_delete
@@ -804,15 +804,15 @@ def delete_ckan_row(server,resource_id):
 #http://stackoverflow.com/questions/17417835/using-ckan-datastore-search-rest-api-with-filters # Filters work if they are proper JSON (double-quoted values instead of single-quoted ones).
 
 
-def process_satisfaction(sat,sats_table,active_table):
+def process_satisfaction(sat,sats_table,liens_table):
     if 'Assignee' in sat or 'Property Owner' in sat:
         pprint.pprint(sat)
         raise ValueError("This satisfaction has an Assignee or Property Owner field")
     store_record_in_db(sat,sats_table)
-    match = matching_lien(sat,active_table)
+    match = matching_lien(sat,liens_table)
     if match is not None:
         match['satisfied'] = True
-        store_record_in_db(match,active_table)
+        store_record_in_db(match,liens_table)
         # To eliminate the 'satisfied' boolean, it's necessary
         # to delete the row from the corresponding database
         # (either the local database or CKAN).
@@ -864,7 +864,7 @@ def is_self_satisfied(lien,filetype,table):
 
     #partial_satisfaction_types = ['Satisfied as to School ONLY', 'Satisfied as to Borough ONLY', 'Satisfied as to Township ONLY', 'Satisfied as to Library ONLY', 'Satisfied as to City ONLY', 'Partial Exoneration - Tax Lien']
 
-def process_records(filename, filetype, raw_table, sats_table, active_table, raw_batch_insert_mode = False):
+def process_records(filename, filetype, raw_table, sats_table, liens_table, raw_batch_insert_mode = False):
     record_type_count = defaultdict(int)
 
     # Re-examine whether these types are really bogus.
@@ -960,7 +960,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                 # Thus, we'll try checking against the raw-liens
                 # table.
             else:
-                self_satisfied = is_self_satisfied(dict(lien),filetype,active_table)
+                self_satisfied = is_self_satisfied(dict(lien),filetype,liens_table)
             # For those oddball lien records that both establish
             # their own existence and satisfaction, put the record
             # in the raw, raw_satisfactions, and inactive tables.
@@ -985,7 +985,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                     if raw_batch_insert_mode:
                         raw_liens_to_add.append(lien)
                     else:
-                        store_lien_in_dbs(lien, raw_table, active_table) # << This can mutate lien.
+                        store_lien_in_dbs(lien, raw_table, liens_table) # << This can mutate lien.
                     # Currently store_lien_in_dbs has all the logic
                     # for handling the processing of different
                     # docket entries for liens (under "process_types").
@@ -1004,9 +1004,9 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
 
                 if filetype == TYPE_ONEMONTHSAT:
 #                    if dict_of_keys(lien) not in satisfied:
-#                        process_satisfaction(lien, sats_table, active_table)
+#                        process_satisfaction(lien, sats_table, liens_table)
                     if dict_of_keys(unmutated_lien) not in satisfied:
-                        process_satisfaction(dict(unmutated_lien), sats_table, active_table)
+                        process_satisfaction(dict(unmutated_lien), sats_table, liens_table)
                         satisfied.append(dict_of_keys(dict(unmutated_lien)))
                 elif self_satisfied and filetype == TYPE_SIXMONTHLIEN:
                 # Note that if a lien from the six-month summary
@@ -1018,7 +1018,7 @@ def process_records(filename, filetype, raw_table, sats_table, active_table, raw
                     clone_for_satisfaction = dict(unmutated_lien)
                     clone_for_satisfaction['filing_date'] = None
                     if dict_of_keys(clone_for_satisfaction) not in satisfied: 
-                        process_satisfaction(clone_for_satisfaction, sats_table, active_table)
+                        process_satisfaction(clone_for_satisfaction, sats_table, liens_table)
                         satisfied.append(dict_of_keys(clone_for_satisfaction)) 
             count += 1
 
@@ -1108,12 +1108,12 @@ def main():
         new_liens_file = filein1
         filetype = detect_format(new_liens_file)
         new_sats_file = filein2
-        raw_table, active_table, sats_table = access_db(db_filename)
+        raw_table, liens_table, sats_table = access_db(db_filename)
         # Process new liens.
-        process_records(new_liens_file, filetype, raw_table, sats_table, active_table, raw_batch_insert_mode = False)
+        process_records(new_liens_file, filetype, raw_table, sats_table, liens_table, raw_batch_insert_mode = False)
         # Then process new satisfactions.
         if filein2 != "":
-            process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, active_table)
+            process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, liens_table)
 
         print("\nFiles processed successfully.")
         with open(dpath+'processed.log', 'ab') as processed:
@@ -1121,7 +1121,7 @@ def main():
             if filein2 != "":
                 processed.write('Processed {}\n'.format(filein2))
         #print("The resulting active table is:")
-        #active_list = active_table.all()
+        #active_list = liens_table.all()
         #for lien in active_list:
         #    pprint.pprint(dict(lien))
 
