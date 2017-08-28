@@ -164,7 +164,7 @@ def main(target = None):
         .connect(pl.FileConnector, target, encoding='utf-8') \
         .extract(pl.CSVExtractor, firstline_headers=True) \
         .schema(RawLiensSchema) \
-        .load(pl.CKANDatastoreLoader, 'production',
+        .load(pl.CKANDatastoreLoader, server,
               fields=fields_to_publish,
               #package_id=package_id,
               #resource_id=resource_id,
