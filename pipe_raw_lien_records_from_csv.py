@@ -127,15 +127,16 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 #The package ID is obtained not from this file but from
 #the referenced settings.json file when the corresponding
 #flag below is True.
-def main():
+def main(target = None):
     specify_resource_by_name = True
     if specify_resource_by_name:
         kwargs = {'resource_name': 'Null - Raw tax-lien records to present (beta)'}
     #else:
         #kwargs = {'resource_id': ''}
     #resource_id = '8cd32648-757c-4637-9076-85e144997ca8' # Raw liens
-    #target = '/Users/daw165/data/TaxLiens/July31_2013/raw-liens.csv' # This path is hard-coded.
-    target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/raw-seminull-test.csv'
+    if target is None:
+        #target = '/Users/daw165/data/TaxLiens/July31_2013/raw-liens.csv' # This path is hard-coded.
+        target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/raw-seminull-test.csv'
     log = open('uploaded.log', 'w+')
 
     #test = yesterday.run()
@@ -191,5 +192,9 @@ fields_to_publish = fields0
 print("fields_to_publish = {}".format(fields_to_publish))
 
 if __name__ == "__main__":
-   # stuff only to run when not called via 'import' here
-    main()
+    # stuff only to run when not called via 'import' here
+       if len(sys.argv) > 1:
+            target_file = sys.argv[1]
+            main(target=target_file)
+       else:
+            main()
