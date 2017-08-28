@@ -1,4 +1,4 @@
-import sys, json, datetime
+import re, sys, json, datetime
 from marshmallow import fields, pre_load, post_load
 
 sys.path.insert(0, '/Users/drw/WPRDC/etl-dev/wprdc-etl') # A path that we need to import code from
@@ -127,7 +127,7 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 #The package ID is obtained not from this file but from
 #the referenced settings.json file when the corresponding
 #flag below is True.
-def main(target = None):
+def main(target=None,update_method='upsert'):
     specify_resource_by_name = True
     if specify_resource_by_name:
         kwargs = {'resource_name': 'Null - Raw tax-lien records to present (beta)'}
@@ -173,14 +173,14 @@ def main(target = None):
               # A potential problem with making the pin field a key is that one property
               # could have two different PINs (due to the alternate PIN) though I
               # have gone to some lengths to avoid this.
-              method='upsert',
+              method=update_method,
               **kwargs).run()
     if specify_resource_by_name:
         print("Piped data to {}".format(kwargs['resource_name']))
-        log.write("Finished upserting {}\n".format(kwargs['resource_name']))
+        log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),kwargs['resource_name']))
     else:
         print("Piped data to {}".format(kwargs['resource_id']))
-        log.write("Finished upserting {}\n".format(kwargs['resource_id']))
+        log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),kwargs['resource_id']))
     log.close()
 
 fields0 = RawLiensSchema().serialize_to_ckan_fields()
