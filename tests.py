@@ -82,7 +82,8 @@ class MyTest(unittest.TestCase):
         self.assertEqual(convert_blocklot_to_pin("37N210 A463","29"),"0037N00210A46300")
         # Four-digit number after the space:
         self.assertEqual(convert_blocklot_to_pin("100C50 4099","30"), "0100C00050409900")
-#   19R100 02 (from a 1995 lien) => 0019R00100000000???
+        self.assertEqual(convert_blocklot_to_pin("2 E1","31"), "2000E00001000000")
+        #   19R100 02 (from a 1995 lien) => 0019R00100000000???
 
 # 	56J104 02 => nothing.
 #   Only 0056-J-00104-0000-00 is currently in the county Property

@@ -458,12 +458,12 @@ def convert_blocklot_to_pin(blocklot,dtd):
             part4 = parts[3]
             part5 = parts[4]
 
-    if count_spaces > 0:
-        parts = blocklot.split(" ")
-        if count_spaces == 1:
-            part123 = parts[0]
-            part45 = parts[1]
-        if count_spaces == 2:
+    if count_spaces > 0: # This code could be combined with the 
+        parts = blocklot.split(" ") # above hyphen-delimited-string
+        if count_spaces == 1: # code, though we should also deal
+            part123 = parts[0] # with those edges cases where 
+            part45 = parts[1] # spaces and hyphens appear in the
+        if count_spaces == 2: # block lot.
             part123 = parts[0]
             part4 = parts[1]
             part5 = parts[2]
@@ -476,7 +476,7 @@ def convert_blocklot_to_pin(blocklot,dtd):
 
 
     if part123 != "":
-        # three required sections (block part 1 and 2, lot)
+        # There are three required sections: block parts 1 and 2 and the lot.
         if len(part123) > 10:
             print("ERROR: block/lot >10 characters ({})".format(blocklot))
             return empty_pin
@@ -492,8 +492,21 @@ def convert_blocklot_to_pin(blocklot,dtd):
                 foundpart2 = True
 
         if not foundpart2:
-            print("ERROR: no alphabetical character in {} ({})".format(blocklot,dtd))
-            return empty_pin
+            if blocklot == "2 E1": # Workaround for the automatic conversion of 2E1, which 
+                return "2000E00001000000" # is wrong by default.
+            else:
+                print("ERROR: no alphabetical character in {} ({})".format(blocklot,dtd))
+                # Example:
+                #   ERROR: no alphabetical character in 2 E1 (DTD-95-011525)
+                # This happens because the space is not expected to occur before the letter.
+                return empty_pin
+            # Here's a workaround:
+            #contains_a_letter = any([x.isalpha() for x in blocklot]) 
+            #if contains_a_letter:
+            #    cleaned_blocklot = re.sub('[ -]','',blocklot)
+            #    return convert_blocklot_to_pin(cleaned_blocklot,dtd)
+            #else:
+            #    return empty_pin
 
         if foundpart2 and len(part1) == 0:
             print("ERROR: block part 1 not found in {} ({})".format(blocklot,dtd))
