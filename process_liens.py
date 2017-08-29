@@ -1134,7 +1134,8 @@ def main():
             process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, liens_table)
 
         print("\nFiles processed successfully.")
-        with open(dpath+'processed.log', 'ab') as processed:
+
+        with open(dpath+'processed.log', 'a') as processed: # Python-3-style
             processed.write('Processed {}\n'.format(filein1))
             if filein2 != "":
                 processed.write('Processed {}\n'.format(filein2))
