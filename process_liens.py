@@ -409,7 +409,7 @@ def form_lien_dict(linetosplit, fieldlist, filetype):
     return lien
 
 
-def convert_blocklot_to_pin(blocklot,dtd):
+def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
     # This function has been improved with respect to the
     # original function.
 
@@ -478,7 +478,10 @@ def convert_blocklot_to_pin(blocklot,dtd):
     if part123 != "":
         # There are three required sections: block parts 1 and 2 and the lot.
         if len(part123) > 10:
-            print("ERROR: block/lot >10 characters ({})".format(blocklot))
+            e_string = "ERROR: block/lot >10 characters ({})".format(blocklot)
+            print(e_string)
+            if pin_log is not None:
+                pin_log.write(e_string+'\n')
             return empty_pin
 
         counter = 0
@@ -495,7 +498,10 @@ def convert_blocklot_to_pin(blocklot,dtd):
             if blocklot == "2 E1": # Workaround for the automatic conversion of 2E1, which 
                 return "2000E00001000000" # is wrong by default.
             else:
-                print("ERROR: no alphabetical character in {} ({})".format(blocklot,dtd))
+                e_string = "ERROR: no alphabetical character in {} ({})".format(blocklot,dtd)
+                print(e_string)
+                if pin_log is not None:
+                    pin_log.write(e_string+'\n')
                 # Example:
                 #   ERROR: no alphabetical character in 2 E1 (DTD-95-011525)
                 # This happens because the space is not expected to occur before the letter.
@@ -509,15 +515,24 @@ def convert_blocklot_to_pin(blocklot,dtd):
             #    return empty_pin
 
         if foundpart2 and len(part1) == 0:
-            print("ERROR: block part 1 not found in {} ({})".format(blocklot,dtd))
+            e_string = "ERROR: block part 1 not found in {} ({})".format(blocklot,dtd)
+            print(e_string)
+            if pin_log is not None:
+                pin_log.write(e_string+'\n')
             return empty_pin
 
         if foundpart2 and len(part3) == 0:
-            print("ERROR: lot not found in {} ({})".format(blocklot,dtd))
+            e_string = "ERROR: lot not found in {} ({})".format(blocklot,dtd)
+            print(e_string)
+            if pin_log is not None:
+                pin_log.write(e_string+'\n')
             return empty_pin
 
         if foundpart2 and part3.isalpha():
-            print("ERROR: non-numeric lot in {} ({})".format(blocklot,dtd))
+            e_string = "ERROR: non-numeric lot in {} ({})".format(blocklot,dtd)
+            print(e_string)
+            if pin_log is not None:
+                pin_log.write(e_string+'\n')
             return empty_pin
 
         # pad parts 1 and 3 with zeros
@@ -528,7 +543,10 @@ def convert_blocklot_to_pin(blocklot,dtd):
 
         # two optional sections (unit/condo, tie-breaker)
         if len(part45) > 6:
-            print("ERROR: unit/tiebreaker > 6 characters ({})".format(blocklot))
+            e_string = "ERROR: unit/tiebreaker > 6 characters ({})".format(blocklot)
+            print(e_string)
+            if pin_log is not None:
+                pin_log.write(e_string+'\n')
             return empty_pin
 
         if len(part45) > 2:
@@ -571,10 +589,16 @@ def convert_blocklot_to_pin(blocklot,dtd):
                         if len(pins) == 1:
 #                            print(blocklot + " => " + pins[0])
                             return pins[0]
-                    print("WARNING: No corresponding PIN found for {} ({})".format(blocklot,dtd))
+                    e_string = "WARNING: No corresponding PIN found for {} ({})".format(blocklot,dtd)
+                    print(e_string)
+                    if pin_log is not None:
+                        pin_log.write(e_string+'\n')
                     return empty_pin
                 else:
-                    print("WARNING: Multiple PINs found for {} ({}): {}".format(blocklot,dtd,pins))
+                    e_string = "WARNING: Multiple PINs found for {} ({}): {}".format(blocklot,dtd,pins)
+                    print(e_string)
+                    if pin_log is not None:
+                        pin_log.write(e_string+'\n')
                     return empty_pin
             else:
                 part4 = part45
@@ -882,7 +906,7 @@ def is_self_satisfied(lien,filetype,table):
 
     #partial_satisfaction_types = ['Satisfied as to School ONLY', 'Satisfied as to Borough ONLY', 'Satisfied as to Township ONLY', 'Satisfied as to Library ONLY', 'Satisfied as to City ONLY', 'Partial Exoneration - Tax Lien']
 
-def process_records(filename, filetype, raw_table, sats_table, liens_table, raw_batch_insert_mode = False):
+def process_records(filename, filetype, raw_table, sats_table, liens_table, pin_log, raw_batch_insert_mode = False):
     record_type_count = defaultdict(int)
 
     # Re-examine whether these types are really bogus.
@@ -940,7 +964,7 @@ def process_records(filename, filetype, raw_table, sats_table, liens_table, raw_
             lien = form_lien_dict(linein.strip(), None, filetype)
 
             # Convert block_lot to PIN.
-            pin = convert_blocklot_to_pin(lien['block_lot'],lien['DTD'])
+            pin = convert_blocklot_to_pin(lien['block_lot'],lien['DTD'],pin_log)
             if pin is not None:
                 lien['PIN'] = pin
             lien = retype_fields(lien)
@@ -1127,11 +1151,14 @@ def main():
         filetype = detect_format(new_liens_file)
         new_sats_file = filein2
         raw_table, liens_table, sats_table = access_db(db_filename)
+
+        pin_log = open(dpath+'pin.log','w')
+
         # Process new liens.
-        process_records(new_liens_file, filetype, raw_table, sats_table, liens_table, raw_batch_insert_mode = False)
+        process_records(new_liens_file, filetype, raw_table, sats_table, liens_table, pin_log, raw_batch_insert_mode = False)
         # Then process new satisfactions.
         if filein2 != "":
-            process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, liens_table)
+            process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, liens_table, pin_log)
 
         print("\nFiles processed successfully.")
 
