@@ -497,6 +497,8 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
         if not foundpart2:
             if blocklot == "2 E1": # Workaround for the automatic conversion of 2E1, which 
                 return "2000E00001000000" # is wrong by default.
+            elif blocklot == "2 G2": 
+                return "2000G00002000000" 
             else:
                 e_string = "ERROR: no alphabetical character in {} ({})".format(blocklot,dtd)
                 print(e_string)
