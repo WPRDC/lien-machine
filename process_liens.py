@@ -411,7 +411,11 @@ def form_lien_dict(linetosplit, fieldlist, filetype):
 
 def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
     # This function has been improved with respect to the
-    # original function.
+    # original function. However, it still seems flawed. 
+    # If there's only one letter in the blocklot, it can be used
+    # (rather than spaces or hyphens) to segment the blocklot
+    # into parts (see below).
+
 
     empty_pin = ""
     # default PIN to all zeros
@@ -433,32 +437,71 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
     foundpart5 = False
 
     blocklot = blocklot.strip() # Remove whitespace from blocklot
+    blocklot = blocklot.upper() # Standardize to capitalized blocklots
 
     # check if the blocklot has hyphens/spaces or not (different processing if not present)
 
     count_hyphens = blocklot.count("-")
     count_spaces = blocklot.count(" ")
+    #blocklot = re.sub("-"," ",blocklot)
 
     if count_hyphens == 0 and count_spaces == 0:
         part123 = blocklot
 
     if count_hyphens > 0:
-        parts = blocklot.split("-")
-        if count_hyphens == 1:
-            part123 = parts[0]
-            part45 = parts[1]
-        if count_hyphens == 2:
-            part123 = parts[0]
-            part4 = parts[1]
-            part5 = parts[2]
-        if count_hyphens == 4:
-            part1 = parts[0]
-            part2 = parts[1]
-            part3 = parts[2]
-            part4 = parts[3]
-            part5 = parts[4]
+        # Begin July 2017 reimagining of how to handle splitting by using the first letter
+        # rather than focusing on hyphens and spaces initially.
+        # This approach was made to work for two vertex cases of blocklots containing 
+        # hyphens, but could be generalized to other cases (including spaces, for instance,
+        # of which there are many more).
 
-    if count_spaces > 0: # This code could be combined with the 
+        # ~46k out of 1.7 million liens have blocklots with a space in them.
+        # ~22k out of 1.7 million liens have blocklots with more than one letter in them.
+        # 3 out of 1.7 million liens have blocklots with a hyphen in them.
+        blocklot = re.sub('-',' ',blocklot)
+        blocklot = re.sub('\s+',' ',blocklot)
+        p = re.compile("[A-Z]")
+        char_positions = []
+        for m in p.finditer(blocklot):
+            char_positions.append(m.start())
+        char_x = char_positions[0]
+        if len(char_positions) == 1:
+            part1 = blocklot[0:char_x].strip('- ')
+            part2 = blocklot[char_x:char_x+1]
+            part345 = blocklot[char_x+1:].strip('- ')
+            last_parts = part345.split(' ')
+            if len(last_parts) == 1:
+                part3 = part345
+            elif len(last_parts) == 2:
+                part3 = last_parts[0]
+                part45 = last_parts[1]
+            elif len(last_parts) == 3:
+                part3 = last_parts[0]
+                part4 = last_parts[1]
+                part5 = last_parts[2]
+                print(part3,part4,part5)
+            else:
+                raise ValueError("blocklot {} did not convert cleanly".format(blocklot))
+        # End July 2017 reimagining. The rest of convert_blocklot_to_pin could use some
+        # revisions. This new code passes tests.py (about 33 different example blocklot
+        # to PIN conversions, including a lot of anomalous ones).
+        else:
+            parts = blocklot.split("-")
+            if count_hyphens == 1:
+                part123 = parts[0]
+                part45 = parts[1]
+            if count_hyphens == 2:
+                part123 = parts[0]
+                part4 = parts[1]
+                part5 = parts[2]
+            if count_hyphens == 4:
+                part1 = parts[0]
+                part2 = parts[1]
+                part3 = parts[2]
+                part4 = parts[3]
+                part5 = parts[4]
+
+    elif count_spaces > 0: # This code could be combined with the 
         parts = blocklot.split(" ") # above hyphen-delimited-string
         if count_spaces == 1: # code, though we should also deal
             part123 = parts[0] # with those edges cases where 
@@ -537,9 +580,9 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
                 pin_log.write(e_string+'\n')
             return empty_pin
 
-        # pad parts 1 and 3 with zeros
-        part1 = part1.zfill(4)
-        part3 = part3.zfill(5)
+    # pad parts 1 and 3 with zeros
+    part1 = part1.zfill(4)
+    part3 = part3.zfill(5)
 
     if part45 != "":
 

@@ -83,6 +83,12 @@ class MyTest(unittest.TestCase):
         # Four-digit number after the space:
         self.assertEqual(convert_blocklot_to_pin("100C50 4099","30"), "0100C00050409900")
         self.assertEqual(convert_blocklot_to_pin("2 E1","31"), "2000E00001000000")
+
+        # The only three hyphenated block lots found in all of the 1995-July 2017 liens.
+        self.assertEqual(convert_blocklot_to_pin("968-C-147","32"), "0968C00147000000")
+        self.assertEqual(convert_blocklot_to_pin("887N398 9-2","33"), "0887N00398000902")
+        self.assertEqual(convert_blocklot_to_pin("296- N-1-1","34"), "") # Should this map to 0296-N-00001-0000-00 ??? 
+        # No closer PIN has been found, and 296-N-1-0-0 is on Robinson Blvd, as specified in the property description.
         #   19R100 02 (from a 1995 lien) => 0019R00100000000???
 
 # 	56J104 02 => nothing.
