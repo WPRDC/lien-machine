@@ -56,7 +56,8 @@ def main(target=None,update_method='upsert'):
     #resource_id = '8cd32648-757c-4637-9076-85e144997ca8' # Raw liens
     if target is None:
         #target = '/Users/daw165/data/TaxLiens/July31_2013/raw-liens.csv' # This path is hard-coded.
-        target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/liens-null-test.csv'
+        #target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/liens-null-test.csv'
+        raise ValueError('Target file must be specified.')
     log = open('uploaded.log', 'w+')
 
     #test = yesterday.run()
