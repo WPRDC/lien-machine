@@ -11,7 +11,7 @@ from parameters.local_parameters import SETTINGS_FILE
 def main(target=None,update_method='upsert'):
     specify_resource_by_name = True
     if specify_resource_by_name:
-        kwargs = {'resource_name': 'Null - Tax-lien satisfaction records 1995 to present (beta)'}
+        kwargs = {'resource_name': 'Tax-lien satisfaction records to present (beta)'}
     #else:
         #kwargs = {'resource_id': ''}
     #resource_id = '8cd32648-757c-4637-9076-85e144997ca8' # Raw liens
