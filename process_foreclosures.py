@@ -31,10 +31,10 @@ def validate_input_files(filein1):
     if filein1 == "":
         errorstring = errorstring + "This script requires a filename to be passed as a parameter.\n"
 
-    if filein1[0:15] != "cv_m_pitt_" or filein1[len(filein1)-4:len(filein1)] not in [".txt", ".lst"]:
+    if filein1[0:10] != "cv_m_pitt_" or filein1[len(filein1)-4:len(filein1)] not in [".txt", ".lst"]:
         errorstring = errorstring + "The first input file must be a foreclosures data file (of the form cv_m_pitt_[something].txt)\n"
 
-    monthyear = filein1[len(filein1)-11:len(filein1)-4]
+    #monthyear = filein1[len(filein1)-11:len(filein1)-4]
 
     return errorstring
 
