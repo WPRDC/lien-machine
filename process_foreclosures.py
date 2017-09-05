@@ -142,11 +142,16 @@ def parse_file(filein):
                 values['amount'] = float(values['amount']) # This totally should not be
                 # necessary, but FixedWith is not doing its job here.
             except:
+                if values['amount'] == "":
+                    values['amount'] = None
                 print("n = {}, amount = {}.".format(n,values['amount']))
-                raise ValueError("")
-            pin = convert_blocklot_to_pin(values['block_lot'],values['case_id'])
-            if pin is not None:
-                values['pin'] = pin
+                #raise ValueError("")
+            if values['block_lot'] == "NONE":
+                values['pin'] = None
+            else:
+                pin = convert_blocklot_to_pin(values['block_lot'],values['case_id'])
+                if pin is not None:
+                    values['pin'] = pin
 
             values['filing_date'] = datetime.strptime(values['filing_date'], "%Y%m%d")
             values['filing_date'] = datetime.strftime(values['filing_date'], "%Y-%m-%d")
