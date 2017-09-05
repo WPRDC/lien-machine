@@ -434,6 +434,9 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
     foundpart4 = False
     foundpart5 = False
 
+    if blocklot == "39J178 39-J-17": # Hard-code a workaround for an obvious data-entry error.
+        blocklot = "39J178"
+
     blocklot = blocklot.strip() # Remove whitespace from blocklot
     blocklot = blocklot.upper() # Standardize to capitalized blocklots
 
