@@ -18,7 +18,7 @@ class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien 
     case_id = fields.String(dump_to="case_id", allow_none=False)
     municipality = fields.String(dump_to="municipality", allow_none=True)
     ward = fields.String(dump_to="ward", allow_none=True)
-    maybe_outdated_docket_type = fields.String(dump_to="last_provided_docket_type", allow_none=True)
+    docket_type = fields.String(dump_to="docket_type", allow_none=True)
     amount = fields.Float(dump_to="amount", allow_none=True)
     #party_type = fields.String(dump_to="party_type", allow_none=True)
     #party_name = fields.String(dump_to="party_name", allow_none=True)
@@ -83,6 +83,10 @@ class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien 
         if data['case_id'] is None:
             pprint.pprint(data)
             raise ValueError("Found a null value for 'case_id'")
+        if data['docket_type'] is None:
+            data['docket_type'] = ''
+            pprint.pprint(data)
+            print("Found a null value for 'docket_type'")
 
 
     @pre_load
