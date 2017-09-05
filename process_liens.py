@@ -78,8 +78,6 @@ def access_db(db_filename):
 #           function and the store_record_in_db function, so adding a CKAN mode
 #           seems plausible.
 
-# [ ] Make validate_input_files relevant to new scheme.
-
 # [ ] Handle mutating the type of lien. For instance, a lien
 # may initially be a City & School Tax Lien but then get
 #   Satisfied as to City ONLY
@@ -1140,10 +1138,13 @@ def validate_input_files(filein1, filein2, filein3):
     lien_monthyear = filein1[len(filein1)-11:len(filein1)-4]
     sats_monthyear = filein2[len(filein2)-11:len(filein2)-4]
 
-    if lien_monthyear != sats_monthyear:
+    if filein1[0:15] == "cv_m_pitt_lien_" and filein2[0:14] == "cv_m_pitt_sat_" and lien_monthyear != sats_monthyear:
         errorstring = errorstring + "The month and year for the lien and satisfaction files do not match. (" + lien_monthyear + "," + sats_monthyear + ")\n"
 
-    return errorstring
+    if errorstring != "":
+        raise ValueError(errorstring)
+
+    return None
 
 def detect_format(new_liens_file):
     #TYPE_SIXMONTHLIEN = 1, TYPE_ONEMONTHLIEN = 3
@@ -1185,45 +1186,41 @@ def main():
     if dpath == '/':
         dpath = ''
 
-    errorstring = validate_input_files(filename1, filename2, db_filename)
+    validate_input_files(filename1, filename2, db_filename)
 
-    errorstring = ""
+    new_liens_file = filein1
+    filetype = detect_format(new_liens_file)
+    new_sats_file = filein2
+    raw_table, liens_table, sats_table = access_db(db_filename)
 
-    if errorstring != "":
-        print(errorstring)
-    else:
-        new_liens_file = filein1
-        filetype = detect_format(new_liens_file)
-        new_sats_file = filein2
-        raw_table, liens_table, sats_table = access_db(db_filename)
+    pin_log = open(dpath+'pin.log','w')
 
-        pin_log = open(dpath+'pin.log','w')
+    # Process new liens.
+    process_records(new_liens_file, filetype, raw_table, sats_table, liens_table, pin_log, raw_batch_insert_mode = False)
+    # Then process new satisfactions.
+    if filein2 != "":
+        process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, liens_table, pin_log)
 
-        # Process new liens.
-        process_records(new_liens_file, filetype, raw_table, sats_table, liens_table, pin_log, raw_batch_insert_mode = False)
-        # Then process new satisfactions.
+    print("\nFiles processed successfully.")
+
+    with open(dpath+'processed.log', 'a') as processed: # Python-3-style
+        processed.write('Processed {}\n'.format(filein1))
         if filein2 != "":
-            process_records(new_sats_file, TYPE_ONEMONTHSAT, raw_table, sats_table, liens_table, pin_log)
+            processed.write('Processed {}\n'.format(filein2))
+    #print("The resulting active table is:")
+    #active_list = liens_table.all()
+    #for lien in active_list:
+    #    pprint.pprint(dict(lien))
 
-        print("\nFiles processed successfully.")
-
-        with open(dpath+'processed.log', 'a') as processed: # Python-3-style
-            processed.write('Processed {}\n'.format(filein1))
-            if filein2 != "":
-                processed.write('Processed {}\n'.format(filein2))
-        #print("The resulting active table is:")
-        #active_list = liens_table.all()
-        #for lien in active_list:
-        #    pprint.pprint(dict(lien))
-
-        #print("The satisfactions table looks like this:")
-        #for sat in sats_table.all():
-        #    pprint.pprint(dict(sat))
+    #print("The satisfactions table looks like this:")
+    #for sat in sats_table.all():
+    #    pprint.pprint(dict(sat))
 
 
-        #print("The raw table looks like this:")
-        #for r in raw_table.all():
-        #    pprint.pprint(dict(r))
+    #print("The raw table looks like this:")
+    #for r in raw_table.all():
+    #    pprint.pprint(dict(r))
+
 # FILE TYPES
 TYPE_SIXMONTHLIEN = 1
 TYPE_ONEMONTHSAT = 2
