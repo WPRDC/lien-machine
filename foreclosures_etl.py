@@ -115,7 +115,7 @@ class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien 
 def main():
     specify_resource_by_name = True
     if specify_resource_by_name:
-        kwargs = {'resource_name': 'Null - Foreclosure petitions to present (beta)'}
+        kwargs = {'resource_name': 'Foreclosure petitions to present (beta)'}
     #else:
         #kwargs = {'resource_id': ''}
     #resource_id = '8cd32648-757c-4637-9076-85e144997ca8' # Raw liens
