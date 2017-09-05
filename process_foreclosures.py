@@ -66,7 +66,7 @@ def parse_file(filein):
             'padding': ' '
         },
 
-        'outdated_status': {
+        'maybe_outdated_docket_type': {
             'required': True,
             'type': 'string',
             'start_pos': 26,
@@ -157,8 +157,6 @@ def parse_file(filein):
             values['filing_date'] = datetime.strftime(values['filing_date'], "%Y-%m-%d")
             # [ ] Convert date string to date type.
 
-            del values['outdated_status']
-
             if values['party_type'] == 'Plaintiff':
                 values['plaintiff'] = values['party_name']
                 del values['party_name']
@@ -199,7 +197,7 @@ def main(*args, **kwargs):
         list_of_dicts = parse_file(filein1)
         
         # Output results to a CSV file and then return the file path to the calling function.
-        fields_to_write = ['pin','block_lot','filing_date','case_id','municipality','ward','amount','plaintiff']
+        fields_to_write = ['pin','block_lot','filing_date','case_id','municipality','ward','maybe_outdated_docket_type','amount','plaintiff']
 
         csv_path = dpath + 'csv/'
         print('os.path.isdir(csv_path) = {}'.format(os.path.isdir(csv_path)))
