@@ -165,7 +165,7 @@ def main():
               #package_id=package_id,
               #resource_id=resource_id,
               #resource_name=resource_name,
-              key_fields=['case_id','pin','block_lot','plaintiff'],
+              key_fields=['case_id','pin','block_lot','plaintiff','docket_type'],
               # A potential problem with making the pin field a key is that one property
               # could have two different PINs (due to the alternate PIN) though I
               # have gone to some lengths to avoid this.
