@@ -130,6 +130,9 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 def main(**kwargs):
     target = kwargs.pop('target',None)
     update_method = kwargs.pop('update_method','upsert')
+    if 'schema' not in kwargs:
+        raise ValueError('A schema must be given to pipe the data to CKAN.')
+    schema = kwargs['schema']
 
     if target is None:
         raise ValueError('Target file must be specified.') 
@@ -143,7 +146,11 @@ def main(**kwargs):
     site = settings['loader'][server]['ckan_root_url']
     package_id = settings['loader'][server]['package_id']
 
-    print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,list(kwargs.values())[0],package_id,site))
+    if 'resource_name' in kwargs:
+        resource_specifier = kwargs['resource_name']
+    else:
+        resource_specifier = kwargs['resource_id']
+    print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,resource_specifier,package_id,site))
     time.sleep(1.0)
 
     lien_and_mean_pipeline = pl.Pipeline('lien_and_mean_pipeline',
@@ -155,7 +162,7 @@ def main(**kwargs):
                                       ) \
         .connect(pl.FileConnector, target, encoding='utf-8') \
         .extract(pl.CSVExtractor, firstline_headers=True) \
-        .schema(RawLiensSchema) \
+        .schema(schema) \
         .load(pl.CKANDatastoreLoader, server,
               fields=fields_to_publish,
               #package_id=package_id,
@@ -175,7 +182,8 @@ def main(**kwargs):
         log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),kwargs['resource_id']))
     log.close()
 
-fields0 = RawLiensSchema().serialize_to_ckan_fields()
+schema = RawLiensSchema
+fields0 = schema().serialize_to_ckan_fields()
 # Eliminate fields that we don't want to upload.
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_type'}))
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_name'}))
@@ -187,6 +195,6 @@ if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
        if len(sys.argv) > 1:
             target_file = sys.argv[1]
-            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)')
+            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)', schema=schema)
        else:
             main()
