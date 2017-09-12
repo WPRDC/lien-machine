@@ -127,12 +127,10 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 #The package ID is obtained not from this file but from
 #the referenced settings.json file when the corresponding
 #flag below is True.
-def main(target=None,update_method='upsert'):
-    specify_resource_by_name = True
-    if specify_resource_by_name:
-        kwargs = {'resource_name': 'Raw tax-lien records to present (beta)'}
-    #else:
-        #kwargs = {'resource_id': ''}
+def main(**kwargs):
+    target = kwargs.pop('target',None)
+    update_method = kwargs.pop('update_method','upsert')
+
     if target is None:
         raise ValueError('Target file must be specified.') 
     log = open('uploaded.log', 'w+')
@@ -169,7 +167,7 @@ def main(target=None,update_method='upsert'):
               # have gone to some lengths to avoid this.
               method=update_method,
               **kwargs).run()
-    if specify_resource_by_name:
+    if 'resource_name' in kwargs:
         print("Piped data to {}".format(kwargs['resource_name']))
         log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),kwargs['resource_name']))
     else:
@@ -189,6 +187,6 @@ if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
        if len(sys.argv) > 1:
             target_file = sys.argv[1]
-            main(target=target_file)
+            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)')
        else:
             main()
