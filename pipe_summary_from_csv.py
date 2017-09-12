@@ -21,8 +21,6 @@ def main(target=None,update_method='upsert'):
     #else:
         #kwargs = {'resource_id': ''}
     if target is None:
-        #target = '/Users/daw165/data/TaxLiens/July31_2013/summary-liens.csv' # This path is hard-coded.
-    #    target = '/Users/drw/WPRDC/Tax_Liens/lien_machine/testing/raw-sats-liens-test.csv'
         raise ValueError('Target file must be specified.')
     log = open('uploaded.log', 'w+')
 
