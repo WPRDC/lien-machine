@@ -128,14 +128,12 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 #the referenced settings.json file when the corresponding
 #flag below is True.
 def main(**kwargs):
-    target = kwargs.pop('target',None)
+    target = kwargs['target'] # raise ValueError('Target file must be specified.')
     update_method = kwargs.pop('update_method','upsert')
     if 'schema' not in kwargs:
         raise ValueError('A schema must be given to pipe the data to CKAN.')
     schema = kwargs['schema']
 
-    if target is None:
-        raise ValueError('Target file must be specified.') 
     log = open('uploaded.log', 'w+')
 
     server = "production"
@@ -174,12 +172,8 @@ def main(**kwargs):
               # have gone to some lengths to avoid this.
               method=update_method,
               **kwargs).run()
-    if 'resource_name' in kwargs:
-        print("Piped data to {}".format(kwargs['resource_name']))
-        log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),kwargs['resource_name']))
-    else:
-        print("Piped data to {}".format(kwargs['resource_id']))
-        log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),kwargs['resource_id']))
+    print("Piped data to {}".format(resource_specifier))
+    log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),resource_specifier))
     log.close()
 
 schema = RawLiensSchema
