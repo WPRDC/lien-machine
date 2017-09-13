@@ -23,7 +23,7 @@ print("fields_to_publish = {}".format(fields_to_publish))
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
-    kwparams = dict(resource_name='Summary of liens to present (alpha)', schema=schema, key_fields=key_fields, server='production', pipe_name='liens_summary_pipeline', fields_to_publish=fields_to_publish)
+    kwparams = dict(resource_name='Summary of liens to present (alpha)', schema=schema, key_fields=key_fields, server='production', pipe_name='liens_summary_pipeline', fields_to_publish=fields_to_publish, clear_first=True)
     if len(sys.argv) > 1:
         target_file = sys.argv[1]
         pipe.main(target=target_file, **kwparams)

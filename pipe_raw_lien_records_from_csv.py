@@ -139,6 +139,8 @@ def main(**kwargs):
     fields_to_publish = kwargs.pop('fields_to_publish')
     server = kwargs.pop('server', 'production')
     pipe_name = kwargs.pop('pipe_name', 'generic_liens_pipeline_name')
+    clear_first = kwargs.pop('clear_first', False) # If this parameter is true,
+    # the datastore will be deleted (leaving the resource intact).
 
     log = open('uploaded.log', 'w+')
 
@@ -173,6 +175,7 @@ def main(**kwargs):
         .schema(schema) \
         .load(pl.CKANDatastoreLoader, server,
               fields=fields_to_publish,
+              clear_first=clear_first,
               #package_id=package_id,
               #resource_id=resource_id,
               #resource_name=resource_name,
