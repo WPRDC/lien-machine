@@ -134,13 +134,15 @@ def main(**kwargs):
         raise ValueError('A schema must be given to pipe the data to CKAN.')
     schema = kwargs.pop('schema')
     key_fields = kwargs['key_fields']
+    server = kwargs.pop('server', 'production')
+    pipe_name = kwargs.pop('pipe_name', 'generic_liens_pipeline_name')
 
     log = open('uploaded.log', 'w+')
 
 
     # There's two versions of kwargs running around now: One for passing to main, and one for passing to the pipeline.
     # Be sure to pop all main-only arguments off of kwargs to prevent them being passed as pipepline parameters.
-    server = "production"
+
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
     #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
     with open(SETTINGS_FILE) as f: 
@@ -155,8 +157,8 @@ def main(**kwargs):
     print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,resource_specifier,package_id,site))
     time.sleep(1.0)
 
-    lien_and_mean_pipeline = pl.Pipeline('lien_and_mean_pipeline',
-                                      'Raw Tax Liens Pipeline',
+    lien_and_mean_pipeline = pl.Pipeline(pipe_name,
+                                      pipe_name,
                                       log_status=False,
                                       settings_file=SETTINGS_FILE,
                                       settings_from_file=True,
@@ -194,6 +196,6 @@ if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
        if len(sys.argv) > 1:
             target_file = sys.argv[1]
-            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields)
+            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline')
        else:
             main()
