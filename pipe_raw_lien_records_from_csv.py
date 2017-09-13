@@ -128,14 +128,18 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 #the referenced settings.json file when the corresponding
 #flag below is True.
 def main(**kwargs):
-    target = kwargs['target'] # raise ValueError('Target file must be specified.')
+    target = kwargs.pop('target') # raise ValueError('Target file must be specified.')
     update_method = kwargs.pop('update_method','upsert')
     if 'schema' not in kwargs:
         raise ValueError('A schema must be given to pipe the data to CKAN.')
-    schema = kwargs['schema']
+    schema = kwargs.pop('schema')
+    key_fields = kwargs['key_fields']
 
     log = open('uploaded.log', 'w+')
 
+
+    # There's two versions of kwargs running around now: One for passing to main, and one for passing to the pipeline.
+    # Be sure to pop all main-only arguments off of kwargs to prevent them being passed as pipepline parameters.
     server = "production"
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
     #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
@@ -166,7 +170,7 @@ def main(**kwargs):
               #package_id=package_id,
               #resource_id=resource_id,
               #resource_name=resource_name,
-              key_fields=['dtd','lien_description','tax_year','pin','block_lot','assignee'],
+              #key_fields=['dtd','lien_description','tax_year','pin','block_lot','assignee'],
               # A potential problem with making the pin field a key is that one property
               # could have two different PINs (due to the alternate PIN) though I
               # have gone to some lengths to avoid this.
@@ -177,6 +181,7 @@ def main(**kwargs):
     log.close()
 
 schema = RawLiensSchema
+key_fields = ['dtd','lien_description','tax_year','pin','block_lot','assignee']
 fields0 = schema().serialize_to_ckan_fields()
 # Eliminate fields that we don't want to upload.
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_type'}))
@@ -189,6 +194,6 @@ if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
        if len(sys.argv) > 1:
             target_file = sys.argv[1]
-            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)', schema=schema)
+            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields)
        else:
             main()
