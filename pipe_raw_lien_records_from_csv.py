@@ -193,6 +193,7 @@ fields0 = schema().serialize_to_ckan_fields()
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_type'}))
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_name'}))
 #fields0.append({'id': 'assignee', 'type': 'text'})
+fields_to_publish = fields0
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
