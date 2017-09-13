@@ -194,8 +194,9 @@ print("fields_to_publish = {}".format(fields_to_publish))
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
-       if len(sys.argv) > 1:
+        kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline')
+        if len(sys.argv) > 1:
             target_file = sys.argv[1]
-            main(target=target_file, resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline')
-       else:
-            main()
+            main(target=target_file, **kwparams)
+        else:
+            raise ValueError("No target specified")
