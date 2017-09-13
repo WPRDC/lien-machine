@@ -134,6 +134,9 @@ def main(**kwargs):
         raise ValueError('A schema must be given to pipe the data to CKAN.')
     schema = kwargs.pop('schema')
     key_fields = kwargs['key_fields']
+    if 'fields_to_publish' not in kwargs:
+        raise ValueError('The fields to be published have not been specified.')
+    fields_to_publish = kwargs.pop('fields_to_publish')
     server = kwargs.pop('server', 'production')
     pipe_name = kwargs.pop('pipe_name', 'generic_liens_pipeline_name')
 
@@ -157,6 +160,7 @@ def main(**kwargs):
     print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,resource_specifier,package_id,site))
     time.sleep(1.0)
 
+    print("fields_to_publish = {}".format(fields_to_publish))
     lien_and_mean_pipeline = pl.Pipeline(pipe_name,
                                       pipe_name,
                                       log_status=False,
@@ -189,12 +193,10 @@ fields0 = schema().serialize_to_ckan_fields()
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_type'}))
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_name'}))
 #fields0.append({'id': 'assignee', 'type': 'text'})
-fields_to_publish = fields0
-print("fields_to_publish = {}".format(fields_to_publish))
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
-        kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline')
+        kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
         if len(sys.argv) > 1:
             target_file = sys.argv[1]
             main(target=target_file, **kwparams)
