@@ -200,7 +200,8 @@ fields_to_publish = fields0
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
-        kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
+        kwparams = dict(resource_id='8cd32648-757c-4637-9076-85e144997ca8', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
+        #kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='test-production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
         if len(sys.argv) > 1:
             target_file = sys.argv[1]
         if len(sys.argv) > 2:
