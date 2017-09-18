@@ -64,6 +64,11 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         target_file = sys.argv[1]
         #main(target=target_file)
+        if len(sys.argv) > 2:
+            if sys.argv[2] == 'clear_first':
+                kwparams['clear_first'] = True
+            else:
+                raise ValueError("Unrecognized second argument")
         pipe.main(target=target_file, **kwparams)
     else:
         raise ValueError("No target specified.")

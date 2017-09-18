@@ -203,6 +203,12 @@ if __name__ == "__main__":
         kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
         if len(sys.argv) > 1:
             target_file = sys.argv[1]
+        if len(sys.argv) > 2:
+            if sys.argv[2] == 'clear_first':
+                kwparams['clear_first'] = True
+            else:
+                raise ValueError("Unrecognized second argument")
             main(target=target_file, **kwparams)
+
         else:
             raise ValueError("No target specified")
