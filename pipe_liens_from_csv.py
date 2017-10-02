@@ -60,8 +60,8 @@ print("fields_to_publish = {}".format(fields_to_publish))
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
-    #kwparams = dict(resource_id='65d0d259-3e58-49d3-bebb-80dc75f61245', schema=schema, key_fields=key_fields, server='production', pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
-    kwparams = dict(resource_name='Tax liens to present (alpha)', schema=schema, key_fields=key_fields, server='test-production', pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
+    kwparams = dict(resource_id='65d0d259-3e58-49d3-bebb-80dc75f61245', schema=schema, key_fields=key_fields, server='production', pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
+    #kwparams = dict(resource_name='Tax liens to present (alpha)', schema=schema, key_fields=key_fields, server='test-production', pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
     if len(sys.argv) > 1:
         target_file = sys.argv[1]
         #main(target=target_file)
