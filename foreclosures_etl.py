@@ -134,11 +134,6 @@ def main():
     target = process_foreclosures.main(input = fixed_width_file)
     print("target = {}".format(target))
 
-
-    #test = yesterday.run()
-    #if not test:
-    #    exit(0)
-
     server = "production"
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
     #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
@@ -160,7 +155,7 @@ def main():
         .connect(pl.FileConnector, target, encoding='utf-8') \
         .extract(pl.CSVExtractor, firstline_headers=True) \
         .schema(ForeclosurePetitionSchema) \
-        .load(pl.CKANDatastoreLoader, 'production',
+        .load(pl.CKANDatastoreLoader, server,
               fields=fields_to_publish,
               #package_id=package_id,
               #resource_id=resource_id,
