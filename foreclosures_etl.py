@@ -207,12 +207,11 @@ def main():
                         print("Copied the file from the FTP server to the archive directory.")
         fixed_width_file = destination_path
 
-#    target = '/Users/drw/WPRDC/Tax_Liens/foreclosure_data/raw-seminull-test.csv'
     target = process_foreclosures.main(input = fixed_width_file)
     print("target = {}".format(target))
 
     server = "production"
-    server = "test"
+    #server = "test"
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
     #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
     with open(FORECLOSURES_SETTINGS_FILE) as f: 
