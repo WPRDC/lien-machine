@@ -1,4 +1,4 @@
-import sys, json, datetime
+import os, sys, json, re, datetime, shutil
 from marshmallow import fields, pre_load, post_load
 
 sys.path.insert(0, '/Users/drw/WPRDC/etl-dev/wprdc-etl') # A path that we need to import code from
@@ -8,7 +8,8 @@ import pprint
 import time
 import process_foreclosures
 
-from parameters.local_parameters import FORECLOSURE_SETTINGS_FILE
+from parameters.local_parameters import FORECLOSURES_SETTINGS_FILE, FORECLOSURES_DATA_PATH
+from notify import send_to_slack
 
 class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien records 
     # (rather than synthesized liens).
@@ -117,6 +118,19 @@ class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien 
 #The package ID is obtained not from this file but from
 #the referenced settings.json file when the corresponding
 #flag below is True.
+
+def compute_hash(target_file):
+    # Stolen from countermeasures ETL script.
+    import hashlib
+    BLOCKSIZE = 65536
+    hasher = hashlib.md5()
+    with open(target_file, 'rb') as afile:
+        buf = afile.read(BLOCKSIZE)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = afile.read(BLOCKSIZE)
+    return hasher.hexdigest()
+
 def main():
     specify_resource_by_name = True
     if specify_resource_by_name:
@@ -129,15 +143,79 @@ def main():
     # Call function that converts fixed-width file into a CSV file. The function 
     # returns the target file path.
 
-    fixed_width_file = sys.argv[1]
+    if len(sys.argv) > 1:
+        fixed_width_file = sys.argv[1]
+    else: # Assume we need to get the latest file through FTP
+        print("Pulling the latest foreclosures data from the FTP server.")
+
+        # Change path to script's path for cron job
+        abspath = os.path.abspath(__file__)
+        dname = os.path.dirname(abspath)
+        os.chdir(dname)
+        local_path = dname+"/latest_pull"
+        # If this path doesn't exist, create it.
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
+
+        import pysftp
+    
+        with open(FORECLOSURES_SETTINGS_FILE) as f: 
+            settings = json.load(f)
+            hostname = settings['connector']['sftp']['county_sftp']['host']
+            username = settings['connector']['sftp']['county_sftp']['username']
+            password = settings['connector']['sftp']['county_sftp']['password']
+            known_hosts_file =  settings['connector']['sftp']['known_hosts']
+        cnopts = pysftp.CnOpts()
+        cnopts.hostkeys.load(known_hosts_file) 
+        #### Also, make sure not to overwrite existing files obliviously.
+        # There's different scenarios to consider here:
+        # 1) There's a file in the main foreclosure_data directory that is outdated and should be 
+        # overwritten with correct data.
+        # 2) There's a file in the main foreclosure_data directory that is correct and the new 
+        # data should not replace it.
+        # (Both these are basically hypothetical scenarios, since so far the files have all been
+        # fine and uniquely named, except maybe when we asked for some files that we missed 
+        # and got some extra months in that update (the updated files were different than the
+        # old ones because the data is dependent on when it's pulled).)
+        with pysftp.Connection(hostname, username=username, password=password,cnopts=cnopts) as sftp:
+            with sftp.cd('dcr/pitt'):           # Change directory
+                files = sftp.listdir()
+                targets = [x for x in files if re.search("opendata",x)]
+                for t in targets:
+                    # First save the file to a local latest_pull directory.
+                    save_location = "{}/{}".format(local_path,t)
+                    sftp.get(t,save_location)
+                    # Then check whether the filename already exists in the main directory.
+                    destination_path = "{}/{}".format(FORECLOSURES_DATA_PATH,t)
+                    if os.path.exists(destination_path):
+                        # It's probably fine, unless the files don't match.
+                        old_file_hash = compute_hash(destination_path)
+                        new_file_hash = compute_hash(save_location)
+                        if old_file_hash != new_file_hash:
+                            msg = "foreclosures_etl: There's a conflict between {} and the new file (residing at {})".format(destination_path,save_location)
+                            send_to_slack(msg)
+                            raise ValueError(msg)
+                        else:
+                            print("There is already a file at {}.".format(destination_path))
+                            # If the file's already there, is there any point in reuploading it
+                            # to the data portal?
+                            # Is there any harm in it? [Let's prefer to try to re-upsert it,
+                            # just in case something went wrong last time.]
+
+                    else: #   If no file is at the destination already, copy the new file over.
+                        shutil.copy(save_location,destination_path)
+                        print("Copied the file from the FTP server to the archive directory.")
+        fixed_width_file = destination_path
+
 #    target = '/Users/drw/WPRDC/Tax_Liens/foreclosure_data/raw-seminull-test.csv'
     target = process_foreclosures.main(input = fixed_width_file)
     print("target = {}".format(target))
 
     server = "production"
+    server = "test"
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
     #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
-    with open(FORECLOSURE_SETTINGS_FILE) as f: 
+    with open(FORECLOSURES_SETTINGS_FILE) as f: 
         settings = json.load(f)
     site = settings['loader'][server]['ckan_root_url']
     package_id = settings['loader'][server]['package_id']
@@ -145,14 +223,15 @@ def main():
     print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,list(kwargs.values())[0],package_id,site))
     time.sleep(1.0)
 
+    
     foreclosure_petition_pipeline = pl.Pipeline('foreclosure_petition_pipeline',
                                       'Pipeline for the Petitions for Foreclosures',
                                       log_status=False,
-                                      settings_file=FORECLOSURE_SETTINGS_FILE,
+                                      settings_file=FORECLOSURES_SETTINGS_FILE,
                                       settings_from_file=True,
                                       start_from_chunk=0
-                                      ) \
-        .connect(pl.FileConnector, target, encoding='utf-8') \
+                                      )
+    foreclosure_petition_pipeline = foreclosure_petition_pipeline.connect(pl.FileConnector, target, encoding='utf-8') \
         .extract(pl.CSVExtractor, firstline_headers=True) \
         .schema(ForeclosurePetitionSchema) \
         .load(pl.CKANDatastoreLoader, server,
