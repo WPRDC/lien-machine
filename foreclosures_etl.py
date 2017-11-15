@@ -1,4 +1,4 @@
-import os, sys, json, re, datetime, shutil
+import os, sys, json, re, datetime
 from marshmallow import fields, pre_load, post_load
 
 sys.path.insert(0, '/Users/drw/WPRDC/etl-dev/wprdc-etl') # A path that we need to import code from
@@ -119,18 +119,6 @@ class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien 
 #The package ID is obtained not from this file but from
 #the referenced settings.json file when the corresponding
 #flag below is True.
-
-def compute_hash(target_file):
-    # Stolen from countermeasures ETL script.
-    import hashlib
-    BLOCKSIZE = 65536
-    hasher = hashlib.md5()
-    with open(target_file, 'rb') as afile:
-        buf = afile.read(BLOCKSIZE)
-        while len(buf) > 0:
-            hasher.update(buf)
-            buf = afile.read(BLOCKSIZE)
-    return hasher.hexdigest()
 
 def main():
     specify_resource_by_name = True
