@@ -46,8 +46,8 @@ def fetch_files(settings_file,local_landing_path,local_storage_path,search_terms
         with sftp.cd(remote_path):           # Change directory
             files = sftp.listdir()
             targets = set()
-            for fn in files:
-                for term in search_terms:
+            for term in search_terms:
+                for fn in files:
                     if re.search(term,fn) is not None:
                         targets.add(fn)
             targets = list(targets)
