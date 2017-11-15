@@ -158,8 +158,8 @@ def main():
         if not os.path.exists(local_path):
             os.makedirs(local_path)
 
-        specifiers = ['opendata']
-        fixed_width_file = fetch_files(FORECLOSURES_SETTINGS_FILE,local_path,FORECLOSURES_DATA_PATH,specifiers)
+        search_terms = ['opendata']
+        fixed_width_file = fetch_files(FORECLOSURES_SETTINGS_FILE,local_path,FORECLOSURES_DATA_PATH,search_terms)
 
     target = process_foreclosures.main(input = fixed_width_file)
     print("target = {}".format(target))

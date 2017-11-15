@@ -15,7 +15,7 @@ def compute_hash(target_file):
     return hasher.hexdigest()
 
 
-def fetch_files(settings_file,local_landing_path,local_storage_path,specifiers):
+def fetch_files(settings_file,local_landing_path,local_storage_path,search_terms):
 
     # If the local path doesn't exist, create it.
     if not os.path.exists(local_landing_path):
@@ -44,7 +44,13 @@ def fetch_files(settings_file,local_landing_path,local_storage_path,specifiers):
     with pysftp.Connection(hostname, username=username, password=password,cnopts=cnopts) as sftp:
         with sftp.cd(remote_path):           # Change directory
             files = sftp.listdir()
-            targets = [x for x in files if re.search("opendata",x)]
+            targets = set()
+            for fn in files:
+                for term in search_terms:
+                    if re.search(term,fn) is not None:
+                        targets.add(fn)
+            targets = list(targets)
+            print("targets = {}".format(targets))
             for t in targets:
                 # First save the file to a local latest_pull directory.
                 save_location = "{}/{}".format(local_landing_path,t)
