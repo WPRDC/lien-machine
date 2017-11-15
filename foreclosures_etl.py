@@ -9,7 +9,7 @@ import time
 import process_foreclosures
 
 from parameters.local_parameters import FORECLOSURES_SETTINGS_FILE, FORECLOSURES_DATA_PATH
-from notify import send_to_slack
+from util.notify import send_to_slack
 
 class ForeclosurePetitionSchema(pl.BaseSchema): # This schema supports raw lien records 
     # (rather than synthesized liens).
