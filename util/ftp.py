@@ -41,6 +41,7 @@ def fetch_files(settings_file,local_landing_path,local_storage_path,search_terms
     # fine and uniquely named, except maybe when we asked for some files that we missed
     # and got some extra months in that update (the updated files were different than the
     # old ones because the data is dependent on when it's pulled).)
+    destination_paths = []
     with pysftp.Connection(hostname, username=username, password=password,cnopts=cnopts) as sftp:
         with sftp.cd(remote_path):           # Change directory
             files = sftp.listdir()
@@ -74,4 +75,6 @@ def fetch_files(settings_file,local_landing_path,local_storage_path,search_terms
                 else: #   If no file is at the destination already, copy the new file over.
                     shutil.copy(save_location,destination_path)
                     print("Copied the file from the FTP server to the archive directory.")
-        return destination_path
+        destination_paths.append(destination_path)
+
+    return destination_paths
