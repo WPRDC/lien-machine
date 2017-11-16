@@ -1133,10 +1133,10 @@ def validate_input_files(filein1, filein2, filein3):
         errorstring = errorstring + "Script requires three filenames to be passed as parameters.\n"
 
     if filein1[0:15] != "cv_m_pitt_lien_" or filein1[len(filein1)-4:len(filein1)] not in [".txt", ".lst"]:
-        errorstring = errorstring + "The first input file must be a tax lien text file (of the form cv_m_pitt_lien_MTHYEAR.txt)\n"
+        errorstring = errorstring + "The first input file must be a tax lien text file (of the form cv_m_pitt_lien_MTHYEAR.[txt|lst])\n"
 
     if filein2[0:14] != "cv_m_pitt_sat_" or filein2[len(filein2)-4:len(filein2)] not in [".txt", ".lst"]:
-        errorstring = errorstring + "The second input file must be a satisfaction text file (of the form cv_m_pitt_sat_MTHYEAR.txt)\n"
+        errorstring = errorstring + "The second input file must be a satisfaction text file (of the form cv_m_pitt_sat_MTHYEAR.[txt|lst])\n"
 
     lien_monthyear = filein1[len(filein1)-11:len(filein1)-4]
     sats_monthyear = filein2[len(filein2)-11:len(filein2)-4]
