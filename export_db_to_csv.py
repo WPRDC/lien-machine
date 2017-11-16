@@ -20,10 +20,11 @@ def write_or_append_to_csv(filename,list_of_dicts,keys):
 
 def main(*args, **kwargs):
     db_file = kwargs.get('db_file_path',None)
-    if db_file is None and len(sys.argv) > 1:
-        db_file = sys.argv[1]
-    else:
-        raise ValueError("No database file path given.")
+    if db_file is None:
+        if len(sys.argv) > 1:
+            db_file = sys.argv[1]
+        else:
+            raise ValueError("No database file path given.")
 
     db = dataset.connect('sqlite:///'+db_file)
     if '/' in db_file:
