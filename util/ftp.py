@@ -45,12 +45,12 @@ def fetch_files(settings_file,local_landing_path,local_storage_path,search_terms
     with pysftp.Connection(hostname, username=username, password=password,cnopts=cnopts) as sftp:
         with sftp.cd(remote_path):           # Change directory
             files = sftp.listdir()
-            targets = set()
+            targets = []
             for term in search_terms:
                 for fn in files:
                     if re.search(term,fn) is not None:
-                        targets.add(fn)
-            targets = list(targets)
+                        if fn not in targets:
+                            targets.append(fn)
             print("targets = {}".format(targets))
             for t in targets:
                 # First save the file to a local latest_pull directory.
