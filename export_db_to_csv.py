@@ -18,9 +18,8 @@ def write_or_append_to_csv(filename,list_of_dicts,keys):
         #dict_writer.writeheader()
         dict_writer.writerows(list_of_dicts)
 
-
-def main():
-    db_file = sys.argv[1]
+def main(*args, **kwargs)
+    db_file = kwargs.get('db_file_path',sys.argv[1])
     db = dataset.connect('sqlite:///'+db_file)
     if '/' in db_file:
         path, filename = db_file.rsplit('/',1)

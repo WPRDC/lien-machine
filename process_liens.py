@@ -1156,30 +1156,29 @@ def detect_format(new_liens_file):
     else:
         return TYPE_ONEMONTHLIEN
 
-def main():
+def main(*args, **kwargs):
     ### main code
-    # Legacy comment:
-    # "Originally, one script was written to process 6-month summary files,
-    # monthly satisfaction files, and monthly lien files.  This script was
-    # split into two scripts:  one to process summary files (one input file
-    # at a time) and one to process ongoing monthly satisfaction/lien files
-    # (two input files at a time).  Parts of the original structure remain
-    # in these new scripts."
+    filein1 = kwargs.get('liens_file_path',None)
+    filein2 = kwargs.get('sats_file_path',None)
+    filein3 = kwargs.get('db_file_path',None)
 
-    try:
-        filein1 = sys.argv[1] # The file with the new liens
-    except:
-        filein1 = ""
+    if filein1 is None:
+        try:
+            filein1 = sys.argv[1] # The file with the new liens
+        except:
+            filein1 = ""
 
-    try:
-        filein2 = sys.argv[2] # The file with the new satisfactions
-    except:
-        filein2 = ""
+    if filein2 is None:
+        try:
+            filein2 = sys.argv[2] # The file with the new satisfactions
+        except:
+            filein2 = ""
 
-    try:
-        filein3 = sys.argv[3] # The file that contains the local database
-    except:
-        filein3 = ""
+    if filein3 is None:
+        try:
+            filein3 = sys.argv[3] # The file that contains the local database
+        except:
+            filein3 = ""
 
     filename1 = filein1.split("/")[-1]
     filename2 = filein2.split("/")[-1]
