@@ -75,6 +75,6 @@ def fetch_files(settings_file,local_landing_path,local_storage_path,search_terms
                 else: #   If no file is at the destination already, copy the new file over.
                     shutil.copy(save_location,destination_path)
                     print("Copied the file from the FTP server to the archive directory.")
-        destination_paths.append(destination_path)
+                destination_paths.append(destination_path)
 
     return destination_paths
