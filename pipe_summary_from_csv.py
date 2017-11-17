@@ -40,7 +40,8 @@ def main(*args,**kwargs):
     pipe.transmit(target=target_file, **kwparams) # This is a hack to get around the ETL framework's limitations. 1) Update (or create) the resource. 
     time.sleep(0.5)
     kwparams['clear_first']=True                  # Then...
-    pipe.transmit(target=target_file, **kwparams) # Clear the datastore and upload the data again.
+    resource_id = pipe.transmit(target=target_file, **kwparams) # Clear the datastore and upload the data again.
+    return resource_id
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here

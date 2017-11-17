@@ -6,9 +6,31 @@ import pipeline as pl
 from subprocess import call
 import pprint
 import time
-#import yesterday
+import ckanapi
 
 from parameters.local_parameters import SETTINGS_FILE
+
+
+def get_package_parameter(site,package_id,parameter,API_key=None):
+    # Stolen from utility-belt.
+    try:
+        ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+        metadata = ckan.action.package_show(id=package_id)
+        desired_string = metadata[parameter]
+        #print("The parameter {} for this package is {}".format(parameter,metadata[parameter]))
+    except:
+        raise RuntimeError("Unable to obtain package parameter '{}' for package with ID {}".format(parameter,package_id))
+
+    return desired_string
+
+def find_resource_id(site,package_id,resource_name,API_key=None):
+    # Get the resource ID given the package ID and resource name. (Stolen from utility-belt).
+    resources = get_package_parameter(site,package_id,'resources',API_key)
+    for r in resources:
+        if r['name'] == resource_name:
+            return r['id']
+    return None
+
 
 class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records 
     # (rather than synthesized liens).
@@ -154,6 +176,7 @@ def transmit(**kwargs):
         settings = json.load(f)
     site = settings['loader'][server]['ckan_root_url']
     package_id = settings['loader'][server]['package_id']
+    API_key = settings['loader'][server]['ckan_api_key']
 
     if 'resource_name' in kwargs:
         resource_specifier = kwargs['resource_name']
@@ -185,9 +208,16 @@ def transmit(**kwargs):
               # have gone to some lengths to avoid this.
               method=update_method,
               **kwargs).run()
+
+    if 'resource_name' in kwargs:
+        resource_id = find_resource_id(site,package_id,kwargs['resource_name'],API_key)
+    else:
+        resource_id = kwargs['resource_id']
+    
     print("Piped data to {} on the {} server".format(resource_specifier,server))
     log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),resource_specifier))
     log.close()
+    return resource_id
 
 schema = RawLiensSchema
 key_fields = ['dtd','lien_description','tax_year','pin','block_lot','assignee']
@@ -221,7 +251,8 @@ def main(*args,**kwargs):
             kwparams['clear_first'] = True
         else:
             raise ValueError("Unrecognized second argument")
-    transmit(target=target_file, **kwparams)
+    resource_id = transmit(target=target_file, **kwparams)
+    return resource_id
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
