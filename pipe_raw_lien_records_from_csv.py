@@ -127,7 +127,7 @@ class RawLiensSchema(pl.BaseSchema): # This schema supports raw lien records
 #The package ID is obtained not from this file but from
 #the referenced settings.json file when the corresponding
 #flag below is True.
-def main(**kwargs):
+def transmit(**kwargs):
     target = kwargs.pop('target') # raise ValueError('Target file must be specified.')
     update_method = kwargs.pop('update_method','upsert')
     if 'schema' not in kwargs:
@@ -145,8 +145,8 @@ def main(**kwargs):
     log = open('uploaded.log', 'w+')
 
 
-    # There's two versions of kwargs running around now: One for passing to main, and one for passing to the pipeline.
-    # Be sure to pop all main-only arguments off of kwargs to prevent them being passed as pipepline parameters.
+    # There's two versions of kwargs running around now: One for passing to transmit, and one for passing to the pipeline.
+    # Be sure to pop all transmit-only arguments off of kwargs to prevent them being passed as pipepline parameters.
 
     # Code below stolen from prime_ckan/*/open_a_channel() but really from utility_belt/gadgets
     #with open(os.path.dirname(os.path.abspath(__file__))+'/ckan_settings.json') as f: # The path of this file needs to be specified.
@@ -185,7 +185,7 @@ def main(**kwargs):
               # have gone to some lengths to avoid this.
               method=update_method,
               **kwargs).run()
-    print("Piped data to {}".format(resource_specifier))
+    print("Piped data to {} on the {} server".format(resource_specifier,server))
     log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),resource_specifier))
     log.close()
 
@@ -198,17 +198,31 @@ fields0.pop(fields0.index({'type': 'text', 'id': 'party_name'}))
 #fields0.append({'id': 'assignee', 'type': 'text'})
 fields_to_publish = fields0
 
-if __name__ == "__main__":
-    # stuff only to run when not called via 'import' here
-        kwparams = dict(resource_id='8cd32648-757c-4637-9076-85e144997ca8', schema=schema, key_fields=key_fields, server='production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
-        #kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server='test-production', pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
+def main(*args,**kwargs):
+
+    server = kwargs.get('server','test-production')
+    if server == 'production':
+        kwparams = dict(resource_id='8cd32648-757c-4637-9076-85e144997ca8', schema=schema, key_fields=key_fields, server=server, pipe_name='raw_tax_liens_pipeline', fields_to_publish = fields0)
+    else:
+        kwparams = dict(resource_name='Raw tax-lien records to present (gamma)', schema=schema, key_fields=key_fields, server=server, pipe_name='raw_tax_liens_pipeline', fields_to_publish=fields0)
+
+    target_file = kwargs.get('input_file',None)
+    if target_file is None:
         if len(sys.argv) > 1:
             target_file = sys.argv[1]
-            if len(sys.argv) > 2:
-                if sys.argv[2] == 'clear_first':
-                    kwparams['clear_first'] = True
-                else:
-                    raise ValueError("Unrecognized second argument")
-            main(target=target_file, **kwparams)
         else:
-            raise ValueError("No target specified")
+            raise ValueError("No target specified.")
+
+    clear_first = kwargs.get('clear_first', False)
+    kwparams['clear_first'] = clear_first
+
+    if len(sys.argv) > 2:
+        if sys.argv[2] == 'clear_first':
+            kwparams['clear_first'] = True
+        else:
+            raise ValueError("Unrecognized second argument")
+    transmit(target=target_file, **kwparams)
+
+if __name__ == "__main__":
+    # stuff only to run when not called via 'import' here
+    main()

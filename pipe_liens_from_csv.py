@@ -56,20 +56,32 @@ fields0.pop(fields0.index({'type': 'text', 'id': 'party_type'}))
 fields0.pop(fields0.index({'type': 'text', 'id': 'party_name'}))
 #fields0.append({'id': 'assignee', 'type': 'text'})
 fields_to_publish = fields0
-print("fields_to_publish = {}".format(fields_to_publish))
+#print("fields_to_publish = {}".format(fields_to_publish))
+
+def main(*args,**kwargs):
+    server = kwargs.get('server','test-production')
+    if server == 'production':
+        kwparams = dict(resource_id='65d0d259-3e58-49d3-bebb-80dc75f61245', schema=schema, key_fields=key_fields, server=server, pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
+    else:
+        kwparams = dict(resource_name='Tax liens to present (alpha)', schema=schema, key_fields=key_fields, server=server, pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
+
+    target_file = kwargs.get('input_file',None)
+    if target_file is None:
+        if len(sys.argv) > 1:
+            target_file = sys.argv[1]
+        else:
+            raise ValueError("No target specified.")
+
+    clear_first = kwargs.get('clear_first', False)
+    kwparams['clear_first'] = clear_first
+
+    if len(sys.argv) > 2:
+        if sys.argv[2] == 'clear_first':
+            kwparams['clear_first'] = True
+        else:
+            raise ValueError("Unrecognized second argument")
+    pipe.transmit(target=target_file, **kwparams)
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
-    kwparams = dict(resource_id='65d0d259-3e58-49d3-bebb-80dc75f61245', schema=schema, key_fields=key_fields, server='production', pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
-    #kwparams = dict(resource_name='Tax liens to present (alpha)', schema=schema, key_fields=key_fields, server='test-production', pipe_name='tax_liens_pipeline', fields_to_publish=fields_to_publish)
-    if len(sys.argv) > 1:
-        target_file = sys.argv[1]
-        #main(target=target_file)
-        if len(sys.argv) > 2:
-            if sys.argv[2] == 'clear_first':
-                kwparams['clear_first'] = True
-            else:
-                raise ValueError("Unrecognized second argument")
-        pipe.main(target=target_file, **kwparams)
-    else:
-        raise ValueError("No target specified.")
+    main()
