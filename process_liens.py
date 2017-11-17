@@ -1193,7 +1193,7 @@ def main(*args, **kwargs):
     new_liens_file = filein1
     filetype = detect_format(new_liens_file)
     new_sats_file = filein2
-    raw_table, liens_table, sats_table = access_db(db_filename)
+    raw_table, liens_table, sats_table = access_db(filein3) # Switched to using the complete path here.
 
     pin_log = open(dpath+'pin.log','w')
 
