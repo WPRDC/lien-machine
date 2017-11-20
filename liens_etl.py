@@ -6,10 +6,10 @@ import export_db_to_csv
 sys.path.insert(0, '/Users/drw/WPRDC/etl-dev/wprdc-etl') # A path that we need to import code from
 import pipeline as pl
 from subprocess import call
-import pprint
+from pprint import pprint
 import time
 import process_foreclosures
-from ckanapi import RemoteCKAN
+import ckanapi
 
 from parameters.local_parameters import SETTINGS_FILE, DATA_PATH
 from util.notify import send_to_slack
@@ -17,15 +17,15 @@ from util.ftp import fetch_files
 
 import pipe_liens_from_csv, pipe_sats_from_csv, pipe_raw_lien_records_from_csv, pipe_summary_from_csv
 
-def fire_grappling_hook(filepath='ckan_settings.json',server='Stage'):
+def open_a_channel(settings_file,server):
     # Get parameters to communicate with a CKAN instance
     # from the specified JSON file.
-    with open(filepath) as f:
+    with open(settings_file) as f:
         settings = json.load(f)
-        API_key = settings["API Keys"][server]
-        site = get_site(settings,server)
-
-    return site, API_key, settings
+        API_key = settings["loader"][server]["ckan_api_key"]
+        site = settings["loader"][server]["ckan_root_url"]
+        package_id = settings['loader'][server]['package_id']
+    return site, API_key, package_id, settings
 
 def resource_show(ckan,resource_id):
     # A wrapper around resource_show (which could be expanded to any resource endpoint)
@@ -57,6 +57,8 @@ def get_resource_parameter(site,resource_id,parameter,API_key=None):
     try:
         ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
         metadata = resource_show(ckan,resource_id)
+        print("get_resource_parameter: metadata")
+        pprint(metadata)
         desired_string = metadata[parameter]
 
         #print("The parameter {} for this resource is {}".format(parameter,metadata[parameter]))
@@ -66,20 +68,23 @@ def get_resource_parameter(site,resource_id,parameter,API_key=None):
     return desired_string
 
 
-def upload_file(site,package_id,API_key,zip_file_path,resource_name):
-    ckan = RemoteCKAN(site, apikey=API_key)
-    ckan.action.resource_create(
+def upload_file(site,package_id,API_key,zip_file_path,resource_name,description):
+    ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+    metadata = ckan.action.resource_create(
         package_id = package_id,
         name = resource_name,
+        description = description,
         url = 'dummy-value',  # ignored but required by CKAN<2.6
-        upload = open(zipfile, 'rb'))
+        upload = open(zip_file_path, 'rb')) # Returns the metadata for the resource.
+    print("upload_file results")
+    pprint(metadata)
 
 def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resource_name,resource_id):
     import shutil
     original_file_name = filepath.split("/")[-1]
     dpath = '/'.join(filepath.split("/")[:-1]) + '/'
-        if dpath == '/':
-            dpath = ''
+    if dpath == '/':
+        dpath = ''
 
     print("dpath={}".format(dpath))
     zip_path = dpath + "zipped"
@@ -89,8 +94,8 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
 
     #cp synthesized-liens.csv zipped/liens-with-current-status-beta.csv
     file_to_zip = zip_path+'/'+original_file_name
-    zip_file_path = zip_path+'/'+zip_file_name)
-    shutil.copy2(filepath, file_to_zip
+    zip_file_path = zip_path+'/'+zip_file_name
+    shutil.copy2(filepath, file_to_zip)
 
     #zip zipped/liens-with-current-status-beta.zip zipped/liens-with-current-status-beta.csv
     import zipfile
@@ -102,16 +107,16 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
     os.remove(file_to_zip)
 
     #[get location of PREVIOUSLY uploaded zip file if any] (maybe from the primary resource's download link)
-    site, API_key, settings = fire_grappling_hook(settings_file,server)
+    site, API_key, package_id, settings = open_a_channel(settings_file,server)
 
-    original_url = get_resource_parameter(site,resource_id,parameter,API_key)
+    original_url = get_resource_parameter(site,resource_id,'url',API_key)
     # Example of a URL than just dumps from the datastore:
     #   https://data.wprdc.org/datastore/dump/1bb6be50-bc7d-4b21-a3a0-1ac27a9e5994
     # Example of a URL that has been modified to link to another file:
     #   https://data.wprdc.org/dataset/22fe57da-f5b8-4c52-90ea-b10591a66f90/resource/7d4c4428-e7a3-4d0e-9d1a-2db348dec233/download/liens-with-current-status-beta.zip
     # So if the URL contains 'dump' there's no old zipped-file resource to terminate.
 
-    package_id = settings['loader'][server]['package_id']
+
     #[upload zipped file to CKAN]
     #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
     # Example name: Raw tax-lien records (beta) [compressed CSV file]
@@ -119,7 +124,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
     #       This is a compressed CSV file version of the table of the raw tax-liens records available here:
     #
     #       https://data.wprdc.org/dataset/allegheny-county-tax-liens-filed-and-satisfied/resource/8cd32648-757c-4637-9076-85e144997ca8
-    description = '"This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
+    description = 'This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
 
     upload_file(site,package_id,API_key,zip_file_path,
         resource_name=source_resource_name + " [compressed CSV file]", 
@@ -192,14 +197,17 @@ def main():
 # download link to download the zipped version.
 
     zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server, 
-            filepath=liens_input_file, zip_name='liens-with-current-status-beta.zip', 
-            source_resource_name = "Tax liens with current status (beta)",
+            filepath=liens_input_file, zip_file_name='liens-with-current-status-beta.zip', 
+            source_resource_name="Tax liens with current status (beta)",
             resource_id=liens_resource_id)
     zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server, 
-            filepath=raw_liens_records_input_file, zip_name='raw-liens-records-beta.zip', 
-            source_resource = "Raw tax-lien records (beta)",
+            filepath=raw_liens_records_input_file, zip_file_name='raw-liens-records-beta.zip', 
+            source_resource_name="Raw tax-lien records (beta)",
             resource_id=liens_resource_id)
     print("There's still more to do!")
+
+    # Every time this is run, new resources are created. Instead of deleting old ZIP files when they're obsolete,
+    # REPLACE the ZIP file in the existing resource.
 
 if __name__ == "__main__":
    # stuff only to run when not called via 'import' here
