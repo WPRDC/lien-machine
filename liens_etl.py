@@ -162,12 +162,15 @@ def main():
     else:
         server = 'production'
 
-    if False:###################################### temporary (for testing)
+    get_files_by_ftp = True
+    if get_files_by_ftp:###################################### temporary (for testing)
         file_locations = fetch_files(SETTINGS_FILE,local_path,DATA_PATH,search_terms)
 
         print("file_locations = {}".format(file_locations))
 
     # STEP 2: caffeinate -i python /Users/daw165/data/TaxLiens/lien-machine/process_liens.py cv_m_pitt_lien_monYEAR.txt cv_m_pitt_sat_monYEAR.txt liens.db
+        if len(file_locations) <= 2:
+            raise ValueError("Not enough files found to complete the extraction.")
         db_file_name = 'liens.db'
         process_liens.main(liens_file_path = file_locations[1], sats_file_path = file_locations[2], db_file_path = DATA_PATH+'/'+db_file_name)
     else:
