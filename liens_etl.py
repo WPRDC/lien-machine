@@ -117,6 +117,10 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
     # So if the URL contains 'dump' there's no old zipped-file resource to terminate.
 
 
+    # [ ] ALSO, track down the resource for the zipped file (if it exists) and send the 
+    # updated zip file to that resource.
+
+
     #[upload zipped file to CKAN]
     #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
     # Example name: Raw tax-lien records (beta) [compressed CSV file]
@@ -151,8 +155,12 @@ def main():
         os.makedirs(local_path)
 
     search_terms = ['pitt1_','pitt_lien', 'pitt_sat']
-    DATA_PATH = '/Users/daw165/data/TaxLiens/lien-machine/tmp' ## temporary (for testing)
-
+    just_testing = True
+    if just_testing:
+        DATA_PATH = '/Users/daw165/data/TaxLiens/lien-machine/tmp' ## temporary (for testing)
+        server = 'test-production'
+    else:
+        server = 'production'
 
     if False:###################################### temporary (for testing)
         file_locations = fetch_files(SETTINGS_FILE,local_path,DATA_PATH,search_terms)
@@ -176,7 +184,7 @@ def main():
 #caffeinate -i python pipe_summary_from_csv.py /PATH/TO/summary-liens.csv
 
 
-    server='test-production'
+
     liens_input_file = DATA_PATH+'/synthesized-liens.csv'
     liens_resource_id = pipe_liens_from_csv.main(input_file=liens_input_file, server=server)
     raw_liens_records_input_file = DATA_PATH+'/raw-liens.csv'
