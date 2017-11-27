@@ -141,7 +141,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
 
     # Delete old zipped-file resource on CKAN.
 
-def main():
+def main(*args,**kwargs):
     # Get the latest files through FTP
     print("Pulling the latest foreclosures data from the FTP server.")
 
@@ -155,6 +155,9 @@ def main():
         os.makedirs(local_path)
 
     search_terms = ['pitt1_','pitt_lien', 'pitt_sat']
+
+    server = kwargs.get('server','test-production')
+
     just_testing = True
     if just_testing:
         DATA_PATH = '/Users/daw165/data/TaxLiens/lien-machine/tmp' ## temporary (for testing)
@@ -221,5 +224,9 @@ def main():
     # REPLACE the ZIP file in the existing resource.
 
 if __name__ == "__main__":
-   # stuff only to run when not called via 'import' here
-    main()
+    # stuff only to run when not called via 'import' here
+    if len(sys.argv) > 1:
+        server = sys.argv[1]
+        main(server = server)
+    else:
+        main()
