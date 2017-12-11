@@ -67,8 +67,21 @@ def get_resource_parameter(site,resource_id,parameter,API_key=None):
 
     return desired_string
 
+def upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,resource_id,description):
+    # The two "upload_file" functions could be combined by sending resource_id or resource_name
+    # as named kwargs, adding them to a kwparams dict and sending that to an appropriately
+    # chosen ckan API call function (either resource_create or resource_update).
+    ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+    metadata = ckan.action.resource_update(
+        package_id = package_id,
+        id = resource_id,
+        description = description,
+        url = 'dummy-value',  # ignored but required by CKAN<2.6
+        upload = open(zip_file_path, 'rb')) # Returns the metadata for the resource.
+    print("upload_file results")
+    pprint(metadata)
 
-def upload_file(site,package_id,API_key,zip_file_path,resource_name,description):
+def upload_file_to_new_resource(site,package_id,API_key,zip_file_path,resource_name,description):
     ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
     metadata = ckan.action.resource_create(
         package_id = package_id,
@@ -115,11 +128,31 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
     # Example of a URL that has been modified to link to another file:
     #   https://data.wprdc.org/dataset/22fe57da-f5b8-4c52-90ea-b10591a66f90/resource/7d4c4428-e7a3-4d0e-9d1a-2db348dec233/download/liens-with-current-status-beta.zip
     # So if the URL contains 'dump' there's no old zipped-file resource to terminate.
-
-
-    # [ ] ALSO, track down the resource for the zipped file (if it exists) and send the 
+    #e.g., #url = "https://data.wprdc.org/dataset/22fe57da-f5b8-4c52-90ea-b10591a66f90/resource/7d4c4428-e7a3-4d0e-9d1a-2db348dec233/download/liens-with-current-status-beta.zip"
+    #e.g., #url.split('/')
+    #e.g., #['https:', '', 'data.wprdc.org', 'dataset', '22fe57da-f5b8-4c52-90ea-b10591a66f90', 'resource', '7d4c4428-e7a3-4d0e-9d1a-2db348dec233', 'download', 'liens-with-current-status-beta.zip']
+    # whereas a dump URL splits like this:
+    #e.g., #['https:', '', 'data.wprdc.org', 'datastore', 'dump', '1bb6be50-bc7d-4b21-a3a0-1ac27a9e5994']
+    # [X] ALSO, track down the resource for the zipped file (if it exists) and send the 
     # updated zip file to that resource.
+    description = 'This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
+    url_parts = url.split('/')
+    if url_parts[3] == 'datastore':
+        # Somehow the file was being stored in the datastore and no link to the zip file was found.
+        # Therefore a new resource needs to be created and the download URL needs to be updated.
+        pass
+    elif re.search("\.zip$",url_parts[-1]) is not None: # It's a zip file in the filestore
+        zip_resource_id = url_parts[-3]
+        assert url_parts[-2] == 'download' # These are checks to be 
+        assert url_parts[-4] == 'resource' # sure that the URL format is correct.
+        # The package ID could also be verified.
+        
+        # Just update the zip file and return to the calling code:
 
+        upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,
+            resource_id=zip_resource_id,
+            description=description)
+        return
 
     #[upload zipped file to CKAN]
     #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
@@ -128,18 +161,17 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
     #       This is a compressed CSV file version of the table of the raw tax-liens records available here:
     #
     #       https://data.wprdc.org/dataset/allegheny-county-tax-liens-filed-and-satisfied/resource/8cd32648-757c-4637-9076-85e144997ca8
-    description = 'This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
 
-    upload_file(site,package_id,API_key,zip_file_path,
+    upload_file_to_new_resource(site,package_id,API_key,zip_file_path,
         resource_name=source_resource_name + " [compressed CSV file]", 
         description=description)
-    # 
 
+    raise ValueError("This is the point where we need the URL where the zipped file can be obtained.")
     #[get location of uploaded zip file]
 
     #utility__belt$ set_url [resource_id] [location of uploaded zip file]
 
-    # Delete old zipped-file resource on CKAN.
+    # Delete the local zipped file.
 
 def main(*args,**kwargs):
     # Get the latest files through FTP
