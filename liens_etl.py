@@ -96,6 +96,9 @@ def get_resource_parameter(site,resource_id,parameter,API_key=None):
 
     return desired_string
 
+def get_resource_name(site,resource_id,API_key=None):
+    return get_resource_parameter(site,resource_id,'name',API_key)
+
 def upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,resource_id,description):
     # The two "upload_file" functions could be combined by sending resource_id or resource_name
     # as named kwargs, adding them to a kwparams dict and sending that to an appropriately
@@ -123,7 +126,7 @@ def upload_file_to_new_resource(site,package_id,API_key,zip_file_path,resource_n
     pprint(metadata)
     return metadata['url']
 
-def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resource_name,resource_id):
+def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id):
     import shutil
     original_file_name = filepath.split("/")[-1]
     dpath = '/'.join(filepath.split("/")[:-1]) + '/'
@@ -152,6 +155,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
 
     #[get location of PREVIOUSLY uploaded zip file if any] (maybe from the primary resource's download link)
     site, API_key, package_id, settings = open_a_channel(settings_file,server)
+    source_resource_name = get_resource_name(site,resource_id,API_key)
 
     original_url = get_resource_parameter(site,resource_id,'url',API_key)
     # Example of a URL than just dumps from the datastore:
@@ -276,13 +280,13 @@ def main(*args,**kwargs):
 # download link (if necessary) to download the zipped version.
 
     zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server, 
-            filepath=liens_input_file, zip_file_name='liens-with-current-status-beta.zip', 
-            source_resource_name="Tax liens with current status (beta)",
+            filepath=liens_input_file, 
+            zip_file_name='liens-with-current-status-beta.zip', 
             resource_id=liens_resource_id)
-    zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server, 
-            filepath=raw_liens_records_input_file, zip_file_name='raw-liens-records-beta.zip', 
-            source_resource_name="Raw tax-lien records (beta)",
-            resource_id=liens_resource_id)
+    zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server,
+            filepath=raw_liens_records_input_file, 
+            zip_file_name='raw-liens-records-beta.zip', 
+            resource_id=raw_resource_id)
     print("There's still more to do!")
 
     # Every time this is run, new resources are created. Instead of deleting old ZIP files when they're obsolete,
