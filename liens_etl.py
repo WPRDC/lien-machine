@@ -187,7 +187,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id)
         url_of_file = upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,
             resource_id=zip_resource_id,
             description=description)
-        #os.remove(zip_file_path)
+        os.remove(zip_file_path)
         return
 
     #[upload zipped file to CKAN]
@@ -208,9 +208,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id)
     #utility__belt$ set_url [resource_id] [location of uploaded zip file]
     set_resource_parameters_to_values(site,resource_id,['url'],[url_of_file],API_key)
     # Delete the local zipped file.
-    print("Now deleted the local zipped file ({}) for good measure.".format(zip_file_path)) 
-
-    #os.remove(zip_file_path)
+    os.remove(zip_file_path)
 
 def main(*args,**kwargs):
     # Get the latest files through FTP
