@@ -143,7 +143,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,source_resou
 
 def main(*args,**kwargs):
     # Get the latest files through FTP
-    print("Pulling the latest foreclosures data from the FTP server.")
+    print("Pulling the latest liens data from the FTP server.")
 
     # Change path to script's path for cron job
     abspath = os.path.abspath(__file__)
@@ -178,6 +178,7 @@ def main(*args,**kwargs):
         process_liens.main(liens_file_path = file_locations[1], sats_file_path = file_locations[2], db_file_path = DATA_PATH+'/'+db_file_name)
     else:
         db_file_name = 'liens.db'
+        # The next line hard-codes particular files, just for testing purposes.
         process_liens.main(liens_file_path = DATA_PATH+'/'+'cv_m_pitt_lien_OCT2017.lst', sats_file_path = DATA_PATH+'/'+'cv_m_pitt_sat_OCT2017.lst', db_file_path = DATA_PATH+'/'+db_file_name)
 
 
@@ -188,9 +189,6 @@ def main(*args,**kwargs):
 #caffeinate -i python pipe_raw_lien_records_from_csv.py /PATH/TO/raw-liens.csv [clear_first] # Takes almost three hours to run.
 #caffeinate -i python pipe_liens_from_csv.py /PATH/TO/synthesized-liens.csv [clear_first]
 #caffeinate -i python pipe_summary_from_csv.py /PATH/TO/summary-liens.csv
-
-
-
     liens_input_file = DATA_PATH+'/synthesized-liens.csv'
     liens_resource_id = pipe_liens_from_csv.main(input_file=liens_input_file, server=server)
     raw_liens_records_input_file = DATA_PATH+'/raw-liens.csv'
@@ -198,12 +196,12 @@ def main(*args,**kwargs):
     sats_resource_id = pipe_sats_from_csv.main(input_file=DATA_PATH+'/raw-sats-liens.csv', server=server)
     summary_resource_id = pipe_summary_from_csv.main(input_file=DATA_PATH+'/summary-liens.csv', server=server)
 
-# This step could be accelerated if we exported and then piped to CKAN 
-# only the new changed rows, but that might not be so easy to figure out. 
-# The best way to do that might be to track in the database which rows 
-# have been successfully upserted (upsert some rows, check that the 
-# process finished without exception, and then flag all those rows
-# in the local database as upserted).
+    # This step could be accelerated if we exported and then piped to CKAN 
+    # only the new changed rows, but that might not be so easy to figure out. 
+    # The best way to do that might be to track in the database which rows 
+    # have been successfully upserted (upsert some rows, check that the 
+    # process finished without exception, and then flag all those rows
+    # in the local database as upserted).
     print("Piped all new liens data to the {} server.".format(server))
 
 # STEP 5 - Compress and deploy the raw lien records CSV file and the 
