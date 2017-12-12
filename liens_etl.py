@@ -147,7 +147,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,
     #zip zipped/liens-with-current-status-beta.zip zipped/liens-with-current-status-beta.csv
     import zipfile
     process_zip = zipfile.ZipFile(zip_file_path, 'w')
-    process_zip.write(file_to_zip, compress_type=zipfile.ZIP_DEFLATED)
+    process_zip.write(file_to_zip, original_file_name, compress_type=zipfile.ZIP_DEFLATED)
     process_zip.close()
 
     #rm zipped/liens-with-current-status-beta.csv
