@@ -10,6 +10,42 @@ import ckanapi
 
 from parameters.local_parameters import SETTINGS_FILE
 
+def resource_show(ckan,resource_id):
+    # A wrapper around resource_show (which could be expanded to any resource endpoint)
+    # that tries the action, and if it fails, tries to dealias the resource ID and tries
+    # the action again.
+    try:
+        metadata = ckan.action.resource_show(id=resource_id)
+    except ckanapi.errors.NotFound:
+        # Maybe the resource_id is an alias for the real one.
+        real_id = dealias(site,resource_id)
+        metadata = ckan.action.resource_show(id=real_id)
+    except:
+        msg = "{} was not found on that CKAN instance".format(resource_id)
+        print(msg)
+        raise ckanapi.errors.NotFound(msg)
+
+    return metadata
+
+def get_resource_parameter(site,resource_id,parameter,API_key=None):
+    # Some resource parameters you can fetch with this function are
+    # 'cache_last_updated', 'package_id', 'webstore_last_updated',
+    # 'datastore_active', 'id', 'size', 'state', 'hash',
+    # 'description', 'format', 'last_modified', 'url_type',
+    # 'mimetype', 'cache_url', 'name', 'created', 'url',
+    # 'webstore_url', 'mimetype_inner', 'position',
+    # 'revision_id', 'resource_type'
+    # Note that 'size' does not seem to be defined for tabular
+    # data on WPRDC.org. (It's not the number of rows in the resource.)
+    try:
+        ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+        metadata = resource_show(ckan,resource_id)
+        desired_string = metadata[parameter]
+        #print("The parameter {} for this resource is {}".format(parameter,metadata[parameter]))
+    except:
+        raise RuntimeError("Unable to obtain resource parameter '{}' for resource with ID {}".format(parameter,resource_id))
+
+    return desired_string
 
 def get_package_parameter(site,package_id,parameter,API_key=None):
     # Stolen from utility-belt.
@@ -180,8 +216,18 @@ def transmit(**kwargs):
 
     if 'resource_name' in kwargs:
         resource_specifier = kwargs['resource_name']
+        original_resource_id = find_resource_id(site,package_id,kwargs['resource_name'],API_key)
     else:
         resource_specifier = kwargs['resource_id']
+        original_resource_id = kwargs['resource_id']
+
+    try:
+        original_url = get_resource_parameter(site,original_resource_id,'url',API_key)
+    except RuntimeError:
+        original_url = None
+    # It's conceivable that original_resource_id may not match resource_id (obtained
+    # below), in instances where the resource needs to be created by the pipeline.
+
     print("Preparing to pipe data from {} to resource {} package ID {} on {}".format(target,resource_specifier,package_id,site))
     time.sleep(1.0)
 
@@ -217,7 +263,7 @@ def transmit(**kwargs):
     print("Piped data to {} on the {} server".format(resource_specifier,server))
     log.write("Finished {}ing {}\n".format(re.sub('e$','',update_method),resource_specifier))
     log.close()
-    return resource_id
+    return resource_id, original_url
 
 schema = RawLiensSchema
 key_fields = ['dtd','lien_description','tax_year','pin','block_lot','assignee']
@@ -251,8 +297,8 @@ def main(*args,**kwargs):
             kwparams['clear_first'] = True
         else:
             raise ValueError("Unrecognized second argument")
-    resource_id = transmit(target=target_file, **kwparams)
-    return resource_id
+    resource_id, original_url = transmit(target=target_file, **kwparams)
+    return resource_id, original_url
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here

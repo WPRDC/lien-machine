@@ -40,8 +40,9 @@ def main(*args,**kwargs):
     pipe.transmit(target=target_file, **kwparams) # This is a hack to get around the ETL framework's limitations. 1) Update (or create) the resource. 
     time.sleep(0.5)
     kwparams['clear_first']=True                  # Then...
-    resource_id = pipe.transmit(target=target_file, **kwparams) # Clear the datastore and upload the data again.
-    return resource_id
+    resource_id, original_url = pipe.transmit(target=target_file, **kwparams) # Clear the datastore and upload the data again.
+    print("(Yes, this data is being deliberately piped to the CKAN resource twice. It has something to do with using the clear_first parameter to clear the datastore, which can only be done if the datastore has already been created, since the ETL framework is flawed.)")
+    return resource_id, original_url
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here

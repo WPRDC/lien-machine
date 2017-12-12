@@ -37,8 +37,8 @@ def main(*args,**kwargs):
             kwparams['clear_first'] = True
         else:
             raise ValueError("Unrecognized second argument")
-    resource_id = pipe.transmit(target=target_file, **kwparams)
-    return resource_id
+    resource_id, original_url = pipe.transmit(target=target_file, **kwparams)
+    return resource_id, original_url
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
