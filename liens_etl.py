@@ -171,6 +171,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,
     # updated zip file to that resource.
     description = 'This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
 
+    uploaded = False
     if original_url is not None and re.search("\.zip$",original_url.split('/')[-1]) is not None: # It's a zip file in the filestore.
         url_parts = original_url.split('/')
         print("url_parts = {}".format(url_parts))
@@ -186,11 +187,21 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,
         
         # Just update the zip file and return to the calling code:
         print("  zip_and_deploy: Uploading file to EXISTING resource ({})...".format(zip_resource_id))
-        url_of_file = upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,
-            resource_id=zip_resource_id,
-            description=description)
-    else:
-        print("No original_url found (maybe because the resource did not initially exist.")
+        try:
+            url_of_file = upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,
+                resource_id=zip_resource_id,
+                description=description)
+            uploaded = True
+        except ckanapi.errors.NotFound:  #ckanapi.errors.NotFound: Resource was not found.
+            # The zip file resource was deleted so fall back to uploading a new resource.
+            uploaded = False
+            print("The resource that the original_url was pointing to is no longer there.")
+
+    if not uploaded:
+        if original_url is None:
+            print("No original_url found (maybe because the resource did not initially exist).")
+        else:
+            print("Unable to update an existing zip-file resource, so let's create a new one.")
         #[upload zipped file to CKAN]
         #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
         # Example name: Raw tax-lien records (beta) [compressed CSV file]
