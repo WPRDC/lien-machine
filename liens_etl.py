@@ -86,8 +86,8 @@ def get_resource_parameter(site,resource_id,parameter,API_key=None):
     try:
         ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
         metadata = resource_show(ckan,resource_id)
-        print("get_resource_parameter: metadata")
-        pprint(metadata)
+        #print("get_resource_parameter: metadata")
+        #pprint(metadata)
         desired_string = metadata[parameter]
 
         #print("The parameter {} for this resource is {}".format(parameter,metadata[parameter]))
@@ -104,8 +104,8 @@ def upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,resou
     # as named kwargs, adding them to a kwparams dict and sending that to an appropriately
     # chosen ckan API call function (either resource_create or resource_update).
     ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+    print("      Uploading file to an existing resource ({})".format(resource_id))
     metadata = ckan.action.resource_update(
-        package_id = package_id,
         id = resource_id,
         description = description,
         url = 'dummy-value',  # ignored but required by CKAN<2.6
@@ -122,11 +122,11 @@ def upload_file_to_new_resource(site,package_id,API_key,zip_file_path,resource_n
         description = description,
         url = 'dummy-value',  # ignored but required by CKAN<2.6
         upload = open(zip_file_path, 'rb')) # Returns the metadata for the resource.
-    print("upload_file results")
-    pprint(metadata)
+    #print("upload_file results")
+    #pprint(metadata)
     return metadata['url']
 
-def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id):
+def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,original_url):
     import shutil
     original_file_name = filepath.split("/")[-1]
     dpath = '/'.join(filepath.split("/")[:-1]) + '/'
@@ -157,7 +157,6 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id)
     site, API_key, package_id, settings = open_a_channel(settings_file,server)
     source_resource_name = get_resource_name(site,resource_id,API_key)
 
-    original_url = get_resource_parameter(site,resource_id,'url',API_key)
     # Example of a URL than just dumps from the datastore:
     #   https://data.wprdc.org/datastore/dump/1bb6be50-bc7d-4b21-a3a0-1ac27a9e5994
     # Example of a URL that has been modified to link to another file:
@@ -171,36 +170,39 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id)
     # [X] ALSO, track down the resource for the zipped file (if it exists) and send the 
     # updated zip file to that resource.
     description = 'This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
-    url_parts = original_url.split('/')
-    if url_parts[3] == 'datastore':
-        # Somehow the file was being stored in the datastore and no link to the zip file was found.
-        # Therefore a new resource needs to be created and the download URL needs to be updated.
-        pass
-    elif re.search("\.zip$",url_parts[-1]) is not None: # It's a zip file in the filestore
+
+    if original_url is not None and re.search("\.zip$",original_url.split('/')[-1]) is not None: # It's a zip file in the filestore.
+        url_parts = original_url.split('/')
+        print("url_parts = {}".format(url_parts))
+
+        #if url_parts[3] == 'datastore':
+            # Somehow the file was being stored in the datastore and no link to the zip file was found.
+            # Therefore a new resource needs to be created and the download URL needs to be updated.
+        print("  zip_and_deploy: Found an existing zip file in the download URL: {}".format(original_url))
         zip_resource_id = url_parts[-3]
         assert url_parts[-2] == 'download' # These are checks to be 
         assert url_parts[-4] == 'resource' # sure that the URL format is correct.
         # The package ID could also be verified.
         
         # Just update the zip file and return to the calling code:
-
+        print("  zip_and_deploy: Uploading file to EXISTING resource ({})...".format(zip_resource_id))
         url_of_file = upload_file_to_existing_resource(site,package_id,API_key,zip_file_path,
             resource_id=zip_resource_id,
             description=description)
-        os.remove(zip_file_path)
-        return
+    else:
+        print("No original_url found (maybe because the resource did not initially exist.")
+        #[upload zipped file to CKAN]
+        #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
+        # Example name: Raw tax-lien records (beta) [compressed CSV file]
+        # Example description: 
+        #       This is a compressed CSV file version of the table of the raw tax-liens records available here:
+        #
+        #       https://data.wprdc.org/dataset/allegheny-county-tax-liens-filed-and-satisfied/resource/8cd32648-757c-4637-9076-85e144997ca8
 
-    #[upload zipped file to CKAN]
-    #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
-    # Example name: Raw tax-lien records (beta) [compressed CSV file]
-    # Example description: 
-    #       This is a compressed CSV file version of the table of the raw tax-liens records available here:
-    #
-    #       https://data.wprdc.org/dataset/allegheny-county-tax-liens-filed-and-satisfied/resource/8cd32648-757c-4637-9076-85e144997ca8
-
-    url_of_file = upload_file_to_new_resource(site,package_id,API_key,zip_file_path,
-        resource_name=source_resource_name + " [compressed CSV file]", 
-        description=description)
+        print("  zip_and_deploy: Uploading file to new resource...")
+        url_of_file = upload_file_to_new_resource(site,package_id,API_key,zip_file_path,
+            resource_name=source_resource_name + " [compressed CSV file]", 
+            description=description)
 
     #[get location of uploaded zip file]
     print("url_of_file = {}".format(url_of_file))
@@ -259,11 +261,11 @@ def main(*args,**kwargs):
 #caffeinate -i python pipe_liens_from_csv.py /PATH/TO/synthesized-liens.csv [clear_first]
 #caffeinate -i python pipe_summary_from_csv.py /PATH/TO/summary-liens.csv
     liens_input_file = DATA_PATH+'/synthesized-liens.csv'
-    liens_resource_id = pipe_liens_from_csv.main(input_file=liens_input_file, server=server)
+    liens_resource_id, original_liens_url = pipe_liens_from_csv.main(input_file=liens_input_file, server=server)
     raw_liens_records_input_file = DATA_PATH+'/raw-liens.csv'
-    raw_resource_id = pipe_raw_lien_records_from_csv.main(input_file=raw_liens_records_input_file, server=server)
-    sats_resource_id = pipe_sats_from_csv.main(input_file=DATA_PATH+'/raw-sats-liens.csv', server=server)
-    summary_resource_id = pipe_summary_from_csv.main(input_file=DATA_PATH+'/summary-liens.csv', server=server)
+    raw_resource_id, original_raw_url = pipe_raw_lien_records_from_csv.main(input_file=raw_liens_records_input_file, server=server)
+    sats_resource_id, _ = pipe_sats_from_csv.main(input_file=DATA_PATH+'/raw-sats-liens.csv', server=server)
+    summary_resource_id, _ = pipe_summary_from_csv.main(input_file=DATA_PATH+'/summary-liens.csv', server=server)
 
     # This step could be accelerated if we exported and then piped to CKAN 
     # only the new changed rows, but that might not be so easy to figure out. 
@@ -280,15 +282,13 @@ def main(*args,**kwargs):
     zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server, 
             filepath=liens_input_file, 
             zip_file_name='liens-with-current-status-beta.zip', 
-            resource_id=liens_resource_id)
+            resource_id=liens_resource_id,
+            original_url=original_liens_url)
     zip_and_deploy_file(settings_file=SETTINGS_FILE, server=server,
             filepath=raw_liens_records_input_file, 
             zip_file_name='raw-liens-records-beta.zip', 
-            resource_id=raw_resource_id)
-    print("There's still more to do!")
-
-    # Every time this is run, new resources are created. Instead of deleting old ZIP files when they're obsolete,
-    # REPLACE the ZIP file in the existing resource.
+            resource_id=raw_resource_id,
+            original_url=original_raw_url)
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
