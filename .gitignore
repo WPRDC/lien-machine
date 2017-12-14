@@ -1,5 +1,8 @@
 *.pyc
 *.csv
+*.swp
+*.db
+TODO
 parameters/
 testing/
 uploaded.log
