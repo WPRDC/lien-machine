@@ -27,6 +27,30 @@ def open_a_channel(settings_file,server):
         package_id = settings['loader'][server]['package_id']
     return site, API_key, package_id, settings
 
+def get_package_parameter(site,package_id,parameter,API_key=None):
+    # Some package parameters you can fetch from the WPRDC with
+    # this function are:
+    # 'geographic_unit', 'owner_org', 'maintainer', 'data_steward_email',
+    # 'relationships_as_object', 'access_level_comment',
+    # 'frequency_publishing', 'maintainer_email', 'num_tags', 'id',
+    # 'metadata_created', 'group', 'metadata_modified', 'author',
+    # 'author_email', 'state', 'version', 'department', 'license_id',
+    # 'type', 'resources', 'num_resources', 'data_steward_name', 'tags',
+    # 'title', 'frequency_data_change', 'private', 'groups',
+    # 'creator_user_id', 'relationships_as_subject', 'data_notes',
+    # 'name', 'isopen', 'url', 'notes', 'license_title',
+    # 'temporal_coverage', 'related_documents', 'license_url',
+    # 'organization', 'revision_id'
+    try:
+        ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+        metadata = ckan.action.package_show(id=package_id)
+        desired_string = metadata[parameter]
+        #print("The parameter {} for this package is {}".format(parameter,metadata[parameter]))
+    except:
+        raise RuntimeError("Unable to obtain package parameter '{}' for package with ID {}".format(parameter,package_id))
+
+    return desired_string
+
 def resource_show(ckan,resource_id):
     # A wrapper around resource_show (which could be expanded to any resource endpoint)
     # that tries the action, and if it fails, tries to dealias the resource ID and tries
