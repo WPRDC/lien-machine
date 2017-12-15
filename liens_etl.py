@@ -1,4 +1,4 @@
-import os, sys, json, re, datetime
+import os, sys, json, re
 from marshmallow import fields, pre_load, post_load
 import process_liens
 import export_db_to_csv
@@ -6,6 +6,7 @@ import export_db_to_csv
 sys.path.insert(0, '/Users/drw/WPRDC/etl-dev/wprdc-etl') # A path that we need to import code from
 import pipeline as pl
 from subprocess import call
+from datetime import datetime, date, timedelta
 from pprint import pprint
 import time
 import process_foreclosures
@@ -247,7 +248,32 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,
     # Delete the local zipped file.
     os.remove(zip_file_path)
 
+def end_of_last_month():
+    today = date.today()
+    first_of_this_month = today.replace(day=1)
+    last_of_previous_month = first_of_this_month - timedelta(days=1)
+    return last_of_previous_month
+
+def up_to_date(settings_file,server):
+    site, API_key, package_id, settings =  open_a_channel(settings_file,server)
+    coverage = get_package_parameter(site,package_id,'temporal_coverage',API_key)
+    # temporal_coverage should be of the form '/09-30-17'
+    if coverage == '' or coverage is None:
+        return False
+    covered_until = datetime.strptime(coverage.split('/')[1],'%m-%d-%y').date()
+    eom = end_of_last_month() 
+    if covered_until > eom:
+        raise ValueError("temporal_coverage ({}) should not be later than the end of last month ({}).".format(covered_until,eom))
+    return covered_until == eom
+
 def main(*args,**kwargs):
+    # Check the 'temporal_coverage' package-level metadata field to see if the package has been updated for last month.
+    server = kwargs.get('server','test-production')
+
+    if up_to_date(SETTINGS_FILE,server):
+        print("According to the 'temporal_coverage' metadata field, this package is up to date.")
+        return
+
     # Get the latest files through FTP
     print("Pulling the latest liens data from the FTP server.")
 
@@ -261,8 +287,6 @@ def main(*args,**kwargs):
         os.makedirs(local_path)
 
     search_terms = ['pitt1_','pitt_lien', 'pitt_sat']
-
-    server = kwargs.get('server','test-production')
 
     global DATA_PATH
 
