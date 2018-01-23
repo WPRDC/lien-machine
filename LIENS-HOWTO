@@ -1,0 +1,106 @@
+[ ] Check the 'temporal_coverage' package-level metadata field to see if the package has been updated for last month.
+
+The files must be obtained from the FTP server either manually or by running a script like foreclosures_etl.py does.
+caffeinate -i /Users/daw165/anaconda/envs/etl/bin/python /Users/daw165/data/TaxLiens/lien-machine/liens_etl.py
+
+If starting from scratch:
+    caffeinate -i ./runall.sh # This takes maybe 12 hours to run.
+else, if just adding a monthly update:
+    caffeinate -i python /Users/daw165/data/TaxLiens/lien-machine/process_liens.py cv_m_pitt_lien_monYEAR.txt cv_m_pitt_sat_monYEAR.txt liens.db
+
+caffeinate -i python ../lien-machine/export_db_to_csv.py liens.db # It takes some number of minutes (maybe 10 or 20) to run this
+
+source activate etl # Or find the etl environment Python and use it for subsequent commands.
+caffeinate -i python pipe_sats_from_csv.py /PATH/TO/raw-sats-liens.csv [clear_first]
+caffeinate -i python pipe_raw_lien_records_from_csv.py /PATH/TO/raw-liens.csv [clear_first] # Takes almost three hours to run.
+caffeinate -i python pipe_liens_from_csv.py /PATH/TO/synthesized-liens.csv [clear_first]
+caffeinate -i python pipe_summary_from_csv.py /PATH/TO/summary-liens.csv
+
+Use the optional "clear_first" argument as the second argument to delete an existing datastore before upserting the CSV data.
+
+[-] For tables that are too big to download, it is then necessary to disable downloading
+
+    [see the relevant utility_belt function]
+
+compress the CSV file, and upload it as a separate resource (replacing the previous one).
+
+[ ] Actually, better than disabling downloading is changing the download URL to link directly to the ZIP file.
+
+from utility_belt import set_resource_parameters_to_values
+site = 'https://data.wprdc.org'
+zip_url = 'https://data.wprdc.org/dataset/22fe57da-f5b8-4c52-90ea-b10591a66f90/resource/7d4c4428-e7a3-4d0e-9d1a-2db348dec233/download/liens-with-current-status-beta.zip'
+resource_id = '65d0d259-3e58-49d3-bebb-80dc75f61245'
+set_resource_parameters_to_values(site,resource_id,['url','url_type'],[zip_url,'zip'],API_key)
+
+OR just use utility-belt/set_url.py <resource ID> <zip url> 
+
+
+But then the question is what the url_type should be. Is it a problem if the url_type is not "datastore"? 
+(I've read things that suggest that the url_type is ignored on upload, so maybe it doesn't matter what it is.)
+
+
+
+
+cp synthesized-liens.csv zipped/liens-with-current-status-beta.csv
+zip zipped/liens-with-current-status-beta.zip zipped/liens-with-current-status-beta.csv
+rm zipped/liens-with-current-status-beta.csv
+[upload zipped file to CKAN]
+#ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
+
+[get location of uploaded zip file]
+
+1) If there's already an uploaded zip file, we can just upload a new file and the resource ID persists.
+Original link from zipped resource:
+https://data.wprdc.org/dataset/22fe57da-f5b8-4c52-90ea-b10591a66f90/resource/9149313e-e1ac-40f4-ad7f-a656834ea020/download/raw-liens-records-beta.zip
+
+and after updating with a new zip file:
+https://data.wprdc.org/dataset/22fe57da-f5b8-4c52-90ea-b10591a66f90/resource/9149313e-e1ac-40f4-ad7f-a656834ea020/download/raw-liens-records-beta.zip
+
+... it's the same.
+
+2) If not, we need to create a new resource by uploading the zip file, and then get that ID and the full URL.
+
+
+utility__belt$ set_url [resource_id] [location of uploaded zip file]
+
+
+[-] Also, update the metadata on the package to reflect the new time frame.
+* This happens automatically since the pipeline framework updates the last_updated metadata on the RESOURCE, which appears to automatically cause the metadata_modified field for the package to update.
+
+
+If adding a monthly update, 1) new records are appended to the raw liens, 2) new records are appended to the 
+raw satisfactions, 3) liens rows can be updated and inserted into the "Liens with status" resource, but 
+4) since satisfied liens can just disappear from the summary file, the entire CKAN resource needs to be wiped and 
+replaced. 
+
+However, given that the new update of synthesized liens can depend on older data (as when a new satisfaction
+comes in and gets matched up with an old lien), it is still necessary for older data to be consulted (e.g., 
+by using a precompiled liens.db). 
+    Can this be done by using the published dataset as the reference? 
+        In principle, yes, though some modifications to the code would need to be made. 
+
+        There would also be questions about performance. Maybe if a local version of the needed datasets were 
+        downloaded to the computer running the scripts (allowing a SQLite database to be created),
+        the process_liens.py script could then run at the same rate that it would otherwise run at.
+        [In this scenario, complete CSV files for all four resources could still be generated, but 
+        upserting would guarantee that only the new ones would be added (except for the summary file
+        which is wiped each time).]
+
+        pseudocode:
+            if not os.exists('liens.db'):
+                download_datasets_and_create_sqlite_db('liens.db')
+
+        The only downside to this that I can see is that any existing errors will persist. Rerunning
+        the code for all the previous data (taking about 12 hours) would (for instance) exploit any
+        improvements to the blocklot-to-PIN conversion code. 
+
+[ ] Update the 'temporal_coverage' package-level metadata field.
+
+
+[ ] Update the maps!
+        I thought that Carto required that the data be deleted and new data be reinserted to maintain 
+        the map styles, but eventually, I worked out a better way to deal with this by pointing the 
+        maps to SQL queries on already-updating datasets. I think this should no longer be an issue.
+
+
+# When running liens_etl.py from a cron job, be sure to specify that the server is 'production' as 'test-production' is now the default.

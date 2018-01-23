@@ -1,0 +1,16 @@
+# MANUALLY #
+
+Download new file each month
+
+> source activate etl
+
+> caffeinate -i python foreclosures_etl.py ../foreclosure_data/cv_m_pitt_opendata_2009.lst # Modify to accommodate name of new file.
+
+# AUTOMATICALLY
+1) Download file from FTP server
+
+2) Run the foreclosures_etl.py script on the new file.
+
+3) Fire off a notification if it fails.
+
+4) Fire off a notification if the file is successfully processed.
