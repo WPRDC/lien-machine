@@ -276,31 +276,32 @@ def end_of_last_month():
     last_of_previous_month = first_of_this_month - timedelta(days=1)
     return last_of_previous_month
 
-def up_to_date(settings_file,server):
+def up_to_date(settings_file,server,date_format="%Y-%m-%d"):
     site, API_key, package_id, settings =  open_a_channel(settings_file,server)
     coverage = get_package_parameter(site,package_id,'temporal_coverage',API_key)
     # temporal_coverage should be of the form '/09-30-17'
     if coverage == '' or coverage is None:
         return False
-    covered_until = datetime.strptime(coverage.split('/')[1],'%m-%d-%y').date()
+    covered_until = datetime.strptime(coverage.split('/')[1],date_format).date()
     eom = end_of_last_month() 
     if covered_until > eom:
         raise ValueError("temporal_coverage ({}) should not be later than the end of last month ({}).".format(covered_until,eom))
     return covered_until == eom
 
-def update_temporal_coverage(settings_file,server):
+def update_temporal_coverage(settings_file,server,date_format="%Y-%m-%d"):
     # Update the 'temporal coverage' package-level field, so it's clear that the ETL process has already
     # been done for the month.
     site, API_key, package_id, settings =  open_a_channel(settings_file,server)
     # temporal_coverage should be of the form '/09-30-17'
-    covered_until = datetime.strftime(end_of_last_month(),"%m-%d-%y")
+    covered_until = datetime.strftime(end_of_last_month(),date_format)
     set_package_parameters_to_values(site,package_id,['temporal_coverage'],['/'+covered_until],API_key)
 
 def main(*args,**kwargs):
     # Check the 'temporal_coverage' package-level metadata field to see if the package has been updated for last month.
     server = kwargs.get('server','test-production')
 
-    if up_to_date(SETTINGS_FILE,server):
+    date_format = "%Y-%m-%d"
+    if up_to_date(SETTINGS_FILE,server,date_format):
         print("According to the 'temporal_coverage' metadata field, this package is up to date.")
         return
 
@@ -384,7 +385,7 @@ def main(*args,**kwargs):
             resource_id=raw_resource_id,
             original_url=original_raw_url)
 
-    update_temporal_coverage(SETTINGS_FILE,server)
+    update_temporal_coverage(SETTINGS_FILE,server,date_format)
 
 if __name__ == "__main__":
     # stuff only to run when not called via 'import' here
