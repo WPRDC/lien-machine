@@ -1,7 +1,11 @@
+Eventual cron job:
+0 17 * * * /Users/daw165/anaconda/envs/etl/bin/python /Users/daw165/data/TaxLiens/lien-machine/liens_etl.py production >/dev/null 2>/Users/daw165/tmp/stderr.log
+
+
 [ ] Check the 'temporal_coverage' package-level metadata field to see if the package has been updated for last month.
 
 The files must be obtained from the FTP server either manually or by running a script like foreclosures_etl.py does.
-caffeinate -i /Users/daw165/anaconda/envs/etl/bin/python /Users/daw165/data/TaxLiens/lien-machine/liens_etl.py
+caffeinate -i /Users/daw165/anaconda/envs/etl/bin/python /Users/daw165/data/TaxLiens/lien-machine/liens_etl.py production
 
 If starting from scratch:
     caffeinate -i ./runall.sh # This takes maybe 12 hours to run.
@@ -10,6 +14,8 @@ else, if just adding a monthly update:
 
 caffeinate -i python ../lien-machine/export_db_to_csv.py liens.db # It takes some number of minutes (maybe 10 or 20) to run this
 
+
+[Note that when running the following scripts from the command line, the script has to be edited to change the server to be 'production'.]
 source activate etl # Or find the etl environment Python and use it for subsequent commands.
 caffeinate -i python pipe_sats_from_csv.py /PATH/TO/raw-sats-liens.csv [clear_first]
 caffeinate -i python pipe_raw_lien_records_from_csv.py /PATH/TO/raw-liens.csv [clear_first] # Takes almost three hours to run.
