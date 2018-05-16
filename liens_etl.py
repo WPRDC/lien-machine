@@ -325,8 +325,6 @@ def main(*args,**kwargs):
     if just_testing:
         DATA_PATH = '/Users/daw165/data/TaxLiens/lien-machine/tmp' ## temporary (for testing)
         server = 'test-production'
-    else:
-        server = 'production'
 
     get_files_by_ftp = True
     if get_files_by_ftp:
