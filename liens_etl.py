@@ -219,6 +219,10 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,
     description = 'This is a compressed CSV file version of the data in the resource "{}"'.format(source_resource_name)
 
     uploaded = False
+
+    # The wprdc-etl framework changes the URL to a datastore/dump URL after every upsert.
+    # We need to override this.
+
     if original_url is not None and re.search("\.zip$",original_url.split('/')[-1]) is not None: # It's a zip file in the filestore.
         url_parts = original_url.split('/')
         print("url_parts = {}".format(url_parts))
@@ -248,7 +252,7 @@ def zip_and_deploy_file(settings_file,server,filepath,zip_file_name,resource_id,
         if original_url is None:
             print("No original_url found (maybe because the resource did not initially exist).")
         else:
-            print("Unable to update an existing zip-file resource, so let's create a new one.")
+            print("Unable to update an existing zip-file resource, so let's create a new one (maybe because the wprdc-etl framework changed the URL to a datastore dump URL).")
         #[upload zipped file to CKAN]
         #ckanapi resource_create package_id=22fe57da-f5b8-4c52-90ea-b10591a66f90
         # Example name: Raw tax-lien records (beta) [compressed CSV file]

@@ -224,7 +224,9 @@ def transmit(**kwargs):
     try:
         original_url = get_resource_parameter(site,original_resource_id,'url',API_key)
     except RuntimeError:
+        print("Exception thrown when trying to obtain original_url.")
         original_url = None
+
     # It's conceivable that original_resource_id may not match resource_id (obtained
     # below), in instances where the resource needs to be created by the pipeline.
 
