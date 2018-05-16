@@ -1,5 +1,5 @@
 Eventual cron job:
-0 17 * * * /Users/daw165/anaconda/envs/etl/bin/python /Users/daw165/data/TaxLiens/lien-machine/liens_etl.py production >/dev/null 2>/Users/daw165/tmp/stderr.log
+0 17 1,2,3 * * /Users/daw165/anaconda/envs/etl/bin/python /Users/daw165/data/TaxLiens/lien-machine/liens_etl.py production >/dev/null 2>/Users/daw165/tmp/stderr.log
 
 
 [ ] Check the 'temporal_coverage' package-level metadata field to see if the package has been updated for last month.
