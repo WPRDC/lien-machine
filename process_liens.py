@@ -465,8 +465,8 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
         char_positions = []
         for m in p.finditer(blocklot):
             char_positions.append(m.start())
-        char_x = char_positions[0]
         if len(char_positions) == 1:
+            char_x = char_positions[0]
             part1 = blocklot[0:char_x].strip('- ')
             part2 = blocklot[char_x:char_x+1]
             part345 = blocklot[char_x+1:].strip('- ')
@@ -487,7 +487,7 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
         # revisions. This new code passes tests.py (about 33 different example blocklot
         # to PIN conversions, including a lot of anomalous ones).
         else:
-            parts = blocklot.split("-")
+            parts = blocklot.split(" ")
             if count_hyphens == 1:
                 part123 = parts[0]
                 part45 = parts[1]
