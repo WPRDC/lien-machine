@@ -436,6 +436,15 @@ def convert_blocklot_to_pin(blocklot,dtd,pin_log = None):
 
     if blocklot == "39J178 39-J-17": # Hard-code a workaround for an obvious data-entry error.
         blocklot = "39J178"
+    elif blocklot == "195-5-254": # Here, someone read an "S" as a "5".
+        blocklot = "195S254" # This could be algorithmically fixed by catching
+        # cases where no numbers are found in the blocklot and trying to infer
+        # what letter was misinterpreted as a number.
+
+        # In another case, 416-G-48 was entered as 416-6-8. Here the "G" is
+        # turned into a 6, but also the second "4" is omitted entirely.
+    elif blocklot == "416-6-8":
+        blocklot = "416-G-48"
 
     blocklot = blocklot.strip() # Remove whitespace from blocklot
     blocklot = blocklot.upper() # Standardize to capitalized blocklots
