@@ -6,10 +6,10 @@ def valid_pins(pin_candidates):
     pins = []
     for candidate in pin_candidates:
         URL = "https://data.wprdc.org/api/action/datastore_search?"
-        URL += "resource_id=518b583f-7cc8-4f60-94d0-174cc98310dc&q="+candidate
+        URL += "resource_id=65855e14-549e-4992-b5be-d629afc676fa&q="+candidate
         # Eventually, we might want to upgrade this query to something
         # more targeted, like
-        # SELECT * FROM "518b583f-7cc8-4f60-94d0-174cc98310dc" WHERE "PARID" LIKE '0001G00043%'
+        # SELECT * FROM "65855e14-549e-4992-b5be-d629afc676fa" WHERE "PARID" LIKE '0001G00043%'
 
         # Actually, an advantage to formatting the query as above is that
         # it will search both the PIN ("PARID") and Alternate ID fields.
